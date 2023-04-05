@@ -28,17 +28,6 @@ struct paddle
     int score;
 };
 
-int updateScore(struct paddle *paddle)
-{
-    paddle->score++;
-    return 0;
-}
-
-int getScore(struct paddle *paddle)
-{
-    return paddle->score;
-}
-
 /* Write data to slave device.  Since the LCD panel is
  * write-only, we don't worry about reading any bits.
  * Destroys the data array (normally received data would
@@ -168,7 +157,7 @@ void write_ones(void)
 void draw_rectangle(int x, int y, int width, int height)
 {
     int page_start, page_end, i, j, page;
-    unsigned char data[17];
+    unsigned char data[17] = {0};
 
     // Calculate the start and end pages for the rectangle
     page_start = y / 8;
@@ -323,19 +312,30 @@ void init_ADC()
                                       // stored in memory ADC12MEM0. Input
                                       // one is selected on reset so this line is not needed
 }
-void init_PWM()
+
+void init_MPD()
 {
-    P1DIR |= BIT2; // Output on Pin 1.2
-    P1SEL |= BIT2; // Pin 1.2 selected as PWM
-    // microseconds
-    TA0CCTL1 = OUTMOD_7; // TA0CCR1 reset/set-high voltage
-    // below count, low voltage when past
-    TA0CTL = TASSEL_2 + MC_1 + TAIE + ID_0;
-    // Timer A control set to SMCLK, 1MHz
-    // and count up mode MC_1
+    P4DIR |= (BIT0 + BIT1 + BIT2 + BIT3);
+    P8DIR |= (BIT1 + BIT2);
+    P7DIR |= BIT0;
+    int i;
+    for (i = 0; i < 4; i++)
+    {
+        // GET NUMBER TO SET FROM ARR
+        P4OUT = 0;
+
+        // STROBE
+        P7OUT = 0b00000000;
+        P7OUT = 0b00000001;
+
+        // SELECT NEXT DISPLAY FOR NEXT LOOP
+        P8OUT -= (1 << 1);
+    }
 }
+
 void start_animation()
 {
+    play_music(2);
     write_ones();
     write_zeros();
     write_ones();
@@ -390,25 +390,12 @@ void move_computer_basic(struct paddle *computer, int y)
 }
 void play_music(int sel)
 {
-    int music[2][3];
-    int ball_hit[] = {261, 261, 392};
-    int score[] = {300, 350, 300};
-    int i = 0;
-    for (i = 0; i < 3; i++)
-    {
-        music[0][i] = score[i];
-        music[1][i] = ball_hit[i];
-    }
-    i = 0;
-    for (i = 0; i < 6; i++)
-    {
-        int period = 1000000 / music[sel][i];
-        TA0CCR0 = period;
-        TA0CCR1 = period / 2;
-        __delay_cycles(50000);
-    }
-    TA0CCR0 = 0;
-    TA0CCR1 = 0;
+    P1OUT &= ~(BIT2 + BIT3);
+    sel = sel << 2;
+    P1OUT |= sel;
+    P1OUT |= BIT4;
+    __delay_cycles(5000); // DELAY FOR 5000 microseconds = 5 milliseconds
+    P1OUT &= ~BIT4;
 }
 void move_ball(struct ball *ball)
 {
@@ -476,38 +463,78 @@ void check_collision(struct ball *ball, struct paddle *player, struct paddle *co
 
 void update_score(struct paddle *player, struct paddle *computer, struct ball *ball)
 {
+
     if (ball->x <= 0)
     {
+        srand(time(0));
+
+        // Generate a random number between 0 and 1
+        int random_num = rand() % 2;
+        random_num = (random_num == 0) ? 1 : -1;
         computer->score++;
         play_music(0);
-        set_up_game(player, computer, ball);
+        // set_up_game(player, computer, ball);
+        ball->x = 47;
+        ball->y = 28;
+        ball->size = 4;
+        ball->x_vel = 1;
+        ball->y_vel = random_num;
+
+        P4OUT = computer->score / 10;
+        P8OUT = 2;
+        P7OUT = 0b00000000;
+        P7OUT = 0b00000001;
+        P4OUT = computer->score % 10;
+        P8OUT = 0;
+        P7OUT = 0b00000000;
+        P7OUT = 0b00000001;
     }
     else if (ball->x >= 95)
     {
+        srand(time(0));
+
+        // Generate a random number between 0 and 1
+        int random_num = rand() % 2;
+        random_num = (random_num == 0) ? 1 : -1;
         player->score++;
         play_music(0);
-        set_up_game(player, computer, ball);
+        ball->x = 47;
+        ball->y = 28;
+        ball->size = 4;
+        ball->x_vel = 1;
+        ball->y_vel = random_num;
+        // set_up_game(player, computer, ball);
+        P4OUT = player->score / 10;
+        P8OUT = 6;
+        P7OUT = 0b00000000;
+        P7OUT = 0b00000001;
+        P4OUT = player->score % 10;
+        P8OUT = 4;
+        P7OUT = 0b00000000;
+        P7OUT = 0b00000001;
     }
 }
 void main(void)
 {
     // Stop the watchdog timer so it doesn't reset our chip
     WDTCTL = WDTPW + WDTHOLD;
+    P1DIR |= (BIT2 + BIT3 + BIT4);
+    init_MPD();
     init_SPI();
     __delay_cycles(5500); // Pause so everything has time to start up properly.
     init_lcd();
     init_ADC();
-    init_PWM();
     start_animation();
+
     struct paddle player;
     struct paddle computer;
     struct ball ball;
     set_up_game(&player, &computer, &ball);
+
     int count = 0;
 
     while (1)
     {
-        // set_ball_speed(&ball, count);
         count++;
         set_ball_speed(&ball, count);
         char adc_position = get_adc_position();
@@ -515,18 +542,13 @@ void main(void)
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
         clear_rectangle(ball.x, ball.y, ball.size, ball.size);
         move_player(&player, adc_position);
-        // move_computer_basic(&computer, ball.y);
-        move_computer_insane(&computer, ball.y, ball.y_vel);
+         move_computer_basic(&computer, ball.y);
+//        move_computer_insane(&computer, ball.y, ball.y_vel);
         move_ball(&ball);
         update_score(&player, &computer, &ball);
         check_collision(&ball, &player, &computer);
         draw_rectangle(player.x, player.y, player.width, player.height);
         draw_rectangle(computer.x, computer.y, computer.width, computer.height);
         draw_rectangle(ball.x, ball.y, ball.size, ball.size);
-    }
-
-    for (;;)
-    {
-        __bis_SR_register(LPM3_bits + GIE);
     }
 }
