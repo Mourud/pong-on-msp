@@ -164,9 +164,9 @@ void draw_ball(int x, int y)
     for (page = page_start; page <= page_end; page++)
     {
 
-        P3OUT &= ~CD;                       // set for commands
-        data[0] = 0xB0 + page;              // set page
-        data[1] = 0x00 + (x & 0x0F);        // LSB of column address
+        P3OUT &= ~CD;                               // set for commands
+        data[0] = 0xB0 + page;                      // set page
+        data[1] = 0x00 + (x & 0x0F);                // LSB of column address
         data[2] = 0x10 + ((x >> ball_size) & 0x0F); // MSB of column address
         spi_IO(data, 3);
 
@@ -235,7 +235,7 @@ void draw_rectangle(int x, int y, int width, int height)
         P3OUT &= ~CD;                           // set for commands
         cmd_data[0] = 0xB0 + page;              // set page
         cmd_data[1] = 0x00 + (x & 0x0F);        // LSB of column address
-        cmd_data[2] = 0x10 + ((x & 0xF0) >>4); // MSB of column address
+        cmd_data[2] = 0x10 + ((x & 0xF0) >> 4); // MSB of column address
         spi_IO(cmd_data, 3);
 
         // Create a dynamic data array based on width
@@ -280,7 +280,7 @@ void clear_rectangle(int x, int y, int width, int height)
         P3OUT &= ~CD;                           // set for commands
         cmd_data[0] = 0xB0 + page;              // set page
         cmd_data[1] = 0x00 + (x & 0x0F);        // LSB of column address
-        cmd_data[2] = 0x10 + ((x & 0xF0) >>4); // MSB of column address
+        cmd_data[2] = 0x10 + ((x & 0xF0) >> 4); // MSB of column address
         spi_IO(cmd_data, 3);
 
         // Create a dynamic data array based on width
@@ -299,7 +299,6 @@ void clear_rectangle(int x, int y, int width, int height)
         free(data);
     }
 }
-
 
 
 void play_music(int sel)
@@ -325,17 +324,11 @@ void move_ball(struct ball *ball)
 int collides(struct ball *ball, struct paddle *player, struct paddle *computer)
 {
     int BUFFER = 2;
-    if (ball->x + ball->size > computer->x 
-    && ball->x <= computer->x + computer->width
-    && ball->y >= computer->y - BUFFER 
-    && (ball->y + ball->size) <= computer->y + computer->height + BUFFER)
+    if (ball->x + ball->size > computer->x && ball->x <= computer->x + computer->width && ball->y >= computer->y - BUFFER && (ball->y + ball->size) <= computer->y + computer->height + BUFFER)
     {
         return 1;
     }
-    if (ball->x < player->x + player->width
-    && ball->x >= player->x
-    && ball->y >= player->y - BUFFER 
-    && (ball->y + ball->size) <= player->y + player->height + BUFFER)
+    if (ball->x < player->x + player->width && ball->x >= player->x && ball->y >= player->y - BUFFER && (ball->y + ball->size) <= player->y + player->height + BUFFER)
     {
         return 1;
     }
@@ -482,7 +475,7 @@ void move_computer_adaptive(struct paddle *computer, struct paddle *player, stru
             // add a non-zero random number to make the AI more human-like
             int rand_num = rand() % 7 - 3;
             target_y = ball->y - computer->height / 2 + rand_num;
-            //target_y = ball->y - computer->height / 2 + rand() % 7 - 3;// adds a random
+            // target_y = ball->y - computer->height / 2 + rand() % 7 - 3;// adds a random
         }
     }
 
@@ -513,8 +506,6 @@ void move_computer_adaptive(struct paddle *computer, struct paddle *player, stru
         computer->y = target_y;
     }
 }
-
-
 
 char get_adc_position()
 {
@@ -553,7 +544,7 @@ void set_up_game(struct paddle *player, struct paddle *computer, struct ball *ba
 
 void check_collision(struct ball *ball, struct paddle *player, struct paddle *computer)
 {
-     struct paddle *paddle;           
+    struct paddle *paddle;
 
     if (collides(ball, player, computer))
     {
@@ -562,7 +553,6 @@ void check_collision(struct ball *ball, struct paddle *player, struct paddle *co
         {
             ball->x = player->x + player->width + 1;
             paddle = player;
-            
         }
         else
         {
@@ -570,12 +560,13 @@ void check_collision(struct ball *ball, struct paddle *player, struct paddle *co
             paddle = computer;
         }
         ball->x_vel = -ball->x_vel;
-        ball->y_vel = ((ball ->y) - (paddle->y + paddle->height / 2)) / 2;
+        ball->y_vel = ((ball->y) - (paddle->y + paddle->height / 2)) / 2;
     }
 }
 
 void update_score(struct paddle *player, struct paddle *computer, struct ball *ball)
 {
+    
     // Generate a random number between 0 and 1
     int random_num_x = rand() % 2;
     random_num_x = (random_num_x == 0) ? 1 : -1;
@@ -621,6 +612,16 @@ void update_score(struct paddle *player, struct paddle *computer, struct ball *b
     }
 }
 
+void check_game_over(struct paddle *player, struct paddle *computer, struct ball *ball){
+    
+    if(player -> score == 5 || computer -> score == 5 ){
+
+        
+        start_animation();
+        set_up_game(player, computer, ball);
+        init_MPD();
+    }
+}
 
 void main(void)
 {
@@ -650,14 +651,15 @@ void main(void)
         clear_rectangle(player.x, player.y, player.width, player.height);
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
         clear_ball(ball.x, ball.y);
-         move_player(&player, adc_position);
-//        move_computer_insane(&player, ball.y, ball.y_vel);
+        move_player(&player, adc_position);
+        // move_computer_insane(&player, ball.y, ball.y_vel);
         // move_computer_basic(&computer, ball.y);
         // move_computer_insane(&computer, ball.y, ball.y_vel);
         move_computer_adaptive(&computer, &player, &ball);
         move_ball(&ball);
         check_collision(&ball, &player, &computer);
         update_score(&player, &computer, &ball);
+        check_game_over(&player, &computer, &ball);
         draw_rectangle(player.x, player.y, player.width, player.height);
         draw_rectangle(computer.x, computer.y, computer.width, computer.height);
         draw_ball(ball.x, ball.y);
