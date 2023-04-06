@@ -580,7 +580,7 @@ void update_score(struct paddle *player, struct paddle *computer, struct ball *b
     int random_num_y = rand() % 2;
     random_num_y = (random_num_y == 0) ? 1 : -1;
 
-    if (ball->x <= 17)
+    if (ball->x <= 10)
     {
         computer->score++;
         play_music(0);
@@ -648,9 +648,9 @@ void main(void)
         clear_rectangle(ball.x, ball.y, ball.size, ball.size);
         move_player(&player, adc_position);
         // move_computer_basic(&computer, ball.y);
-        // move_computer_insane(&computer, ball.y, ball.y_vel);
+        move_computer_insane(&computer, ball.y, ball.y_vel);
         // move_computer_adaptive(&computer, &player, ball.y, ball.y_vel, ball.x_vel);
-        move_computer_adaptive(&computer, &player, &ball);
+        // move_computer_adaptive(&computer, &player, &ball);
         move_ball(&ball);
         check_collision(&ball, &player, &computer);
         update_score(&player, &computer, &ball);
