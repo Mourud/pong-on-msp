@@ -149,6 +149,75 @@ void write_ones(void)
         }
     }
 }
+void draw_ball(int x, int y)
+{
+    int ball_size = 4;
+    int page_start, page_end, i, j, page;
+    unsigned char data[4] = {0};
+
+    // Calculate the start and end pages for the rectangle
+    page_start = y / 8;
+    page_end = (y + 4) / 8;
+
+    for (page = page_start; page <= page_end; page++)
+    {
+
+        P3OUT &= ~CD;                       // set for commands
+        data[0] = 0xB0 + page;              // set page
+        data[1] = 0x00 + (x & 0x0F);        // LSB of column address
+        data[2] = 0x10 + ((x >> ball_size) & 0x0F); // MSB of column address
+        spi_IO(data, 3);
+
+        P3OUT |= CD; // set for data
+        for (i = 0; i < ball_size; i++)
+        {
+            // Calculate the byte to draw based on the current page and y coordinate
+            if (page == page_start)
+            {
+                data[i] |= 0xFF << (y % 8);
+            }
+            else if (page == page_end)
+            {
+                data[i] = 0xFF >> (8 - (y + ball_size) % 8);
+            }
+            else
+            {
+                data[i] = 0xFF;
+            }
+        }
+
+        spi_IO(data, ball_size);
+    }
+}
+
+void clear_ball(int x, int y)
+{
+    int ball_size = 4;
+    int page_start, page_end, i, j, page;
+    unsigned char data[4];
+
+    // Calculate the start and end pages for the rectangle
+    page_start = y / 8;
+    page_end = (y + ball_size) / 8;
+
+    for (page = page_start; page <= page_end; page++)
+    {
+        P3OUT &= ~CD;                       // set for commands
+        data[0] = 0xB0 + page;              // set page
+        data[1] = 0x00 + (x & 0x0F);        // LSB of column address
+        data[2] = 0x10 + ((x >> 4) & 0x0F); // MSB of column address
+        spi_IO(data, 3);
+
+        P3OUT |= CD; // set for data
+        for (i = 0; i < ball_size; i++)
+        {
+            // Calculate the byte to draw based on the current page and y coordinate
+            data[i] = 0x00;
+        }
+
+        spi_IO(data, ball_size);
+    }
+}
 
 void draw_rectangle(int x, int y, int width, int height)
 {
@@ -164,7 +233,7 @@ void draw_rectangle(int x, int y, int width, int height)
         P3OUT &= ~CD;                           // set for commands
         cmd_data[0] = 0xB0 + page;              // set page
         cmd_data[1] = 0x00 + (x & 0x0F);        // LSB of column address
-        cmd_data[2] = 0x10 + ((x >> 4) & 0x0F); // MSB of column address
+        cmd_data[2] = 0x10 + ((x & 0xF0) >>4); // MSB of column address
         spi_IO(cmd_data, 3);
 
         // Create a dynamic data array based on width
@@ -209,7 +278,7 @@ void clear_rectangle(int x, int y, int width, int height)
         P3OUT &= ~CD;                           // set for commands
         cmd_data[0] = 0xB0 + page;              // set page
         cmd_data[1] = 0x00 + (x & 0x0F);        // LSB of column address
-        cmd_data[2] = 0x10 + ((x >> 4) & 0x0F); // MSB of column address
+        cmd_data[2] = 0x10 + ((x & 0xF0) >>4); // MSB of column address
         spi_IO(cmd_data, 3);
 
         // Create a dynamic data array based on width
@@ -524,7 +593,6 @@ void set_up_game(struct paddle *player, struct paddle *computer, struct ball *ba
     ball->y_vel = random_num;
 }
 
-
 void check_collision(struct ball *ball, struct paddle *player, struct paddle *computer)
 {
 
@@ -551,7 +619,7 @@ void update_score(struct paddle *player, struct paddle *computer, struct ball *b
     int random_num_y = rand() % 2;
     random_num_y = (random_num_y == 0) ? 1 : -1;
 
-    if (ball->x <= 10)
+    if (ball->x <= -4)
     {
         computer->score++;
         play_music(0);
@@ -570,7 +638,7 @@ void update_score(struct paddle *player, struct paddle *computer, struct ball *b
         P7OUT = 0b00000000;
         P7OUT = 0b00000001;
     }
-    else if (ball->x >= 87)
+    else if (ball->x >= 97)
     {
         player->score++;
         play_music(0);
@@ -609,6 +677,21 @@ void main(void)
 
     int count = 0;
 
+    // while(1){
+    //     char c = get_adc_position();
+    //     clear_rectangle(player.x, player.y, player.width, player.height);
+    //     clear_rectangle(computer.x, computer.y, computer.width, computer.height);
+    //     // clear_rectangle(ball.x, ball.y, ball.size, ball.size);
+
+
+    //     move_player(&player, c);
+    //     move_computer_basic(&computer, ball.y);
+    //     move_ball(&ball);
+
+    //     // draw_rectangle(ball.x, ball.y, ball.size, ball.size);
+    //     draw_rectangle(player.x, player.y, player.width, player.height);
+    //     draw_rectangle(computer.x, computer.y, computer.width, computer.height);
+    // }
     while (1)
     {
         count++;
@@ -616,7 +699,7 @@ void main(void)
         char adc_position = get_adc_position();
         clear_rectangle(player.x, player.y, player.width, player.height);
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
-        clear_rectangle(ball.x, ball.y, ball.size, ball.size);
+        clear_ball(ball.x, ball.y);
         move_player(&player, adc_position);
         // move_computer_basic(&computer, ball.y);
         move_computer_insane(&computer, ball.y, ball.y_vel);
@@ -627,6 +710,6 @@ void main(void)
         update_score(&player, &computer, &ball);
         draw_rectangle(player.x, player.y, player.width, player.height);
         draw_rectangle(computer.x, computer.y, computer.width, computer.height);
-        draw_rectangle(ball.x, ball.y, ball.size, ball.size);
+        draw_ball(ball.x, ball.y);
     }
 }
