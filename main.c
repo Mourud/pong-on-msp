@@ -1,4 +1,6 @@
 #include <msp430.h>
+#include <stdlib.h>
+#include <time.h>
 
 #define CS BIT3   // Chip Select line
 #define CD BIT1   // Command/Data mode line
@@ -152,7 +154,7 @@ void write_ones(void)
 void draw_ball(int x, int y)
 {
     int ball_size = 4;
-    int page_start, page_end, i, j, page;
+    int page_start, page_end, i, page;
     unsigned char data[4] = {0};
 
     // Calculate the start and end pages for the rectangle
@@ -193,7 +195,7 @@ void draw_ball(int x, int y)
 void clear_ball(int x, int y)
 {
     int ball_size = 4;
-    int page_start, page_end, i, j, page;
+    int page_start, page_end, i, page;
     unsigned char data[4];
 
     // Calculate the start and end pages for the rectangle
@@ -221,7 +223,7 @@ void clear_ball(int x, int y)
 
 void draw_rectangle(int x, int y, int width, int height)
 {
-    int page_start, page_end, i, j, page;
+    int page_start, page_end, i, page;
 
     // Calculate the start and end pages for the rectangle
     page_start = y / 8;
@@ -266,7 +268,7 @@ void draw_rectangle(int x, int y, int width, int height)
 
 void clear_rectangle(int x, int y, int width, int height)
 {
-    int page_start, page_end, i, j, page;
+    int page_start, page_end, i, page;
 
     // Calculate the start and end pages for the rectangle
     page_start = y / 8;
@@ -298,65 +300,38 @@ void clear_rectangle(int x, int y, int width, int height)
     }
 }
 
-void test(void)
+void play_music(int sel)
 {
-    int x, y;
-
-    for (x = 0; x < 102; x++)
-    {
-        unsigned char ones[102] = {0};
-
-        for (y = 0; y < 64; y++)
-        {
-            if (x == y)
-            {
-                int i, j, page;
-
-                int bit = y % 8;
-                page = y / 8;
-
-                P3OUT &= ~CD;          // set for commands
-                ones[0] = 0xB0 + page; // set page
-                ones[1] = 0x00;        // LSB of column address is 0
-                ones[2] = 0x10;        // MSB of column address is 0
-                spi_IO(ones, 3);
-                unsigned char b = 1;
-                b = b << bit;
-                unsigned char data = 0;
-                data |= b;
-
-                P3OUT |= CD; // set for data
-
-                ones[x] = data;
-
-                spi_IO(ones, sizeof(ones));
-                P3OUT &= ~CD;          // set for commands
-                ones[0] = 0xB0 + page; // set page
-                ones[1] = 0x00;        // LSB of column address is 0
-                ones[2] = 0x10;        // MSB of column address is 0
-                spi_IO(ones, 3);
-                P3OUT |= CD; // set for data
-                ones[x] = 0;
-                __delay_cycles(100000);
-                spi_IO(ones, sizeof(ones));
-            }
-        }
-    }
+    P1OUT &= ~(BIT2 + BIT3);
+    sel = sel << 2;
+    P1OUT |= sel;
+    P1OUT |= BIT4;
+    __delay_cycles(5000); // DELAY FOR 5000 microseconds = 5 milliseconds
+    P1OUT &= ~BIT4;
 }
+void move_ball(struct ball *ball)
+{
+    if (ball->y <= 0 || ball->y >= 59)
+    {
+        ball->y_vel = -ball->y_vel;
+    }
 
+    ball->x += ball->x_vel;
+    ball->y += ball->y_vel;
+}
 
 int collides(struct ball *ball, struct paddle *player, struct paddle *computer)
 {
     int BUFFER = 2;
     if (ball->x + ball->size > computer->x 
-    && ball->x <= computer->x + computer->width/2 
+    && ball->x <= computer->x + computer->width
     && ball->y >= computer->y - BUFFER 
     && (ball->y + ball->size) <= computer->y + computer->height + BUFFER)
     {
         return 1;
     }
     if (ball->x < player->x + player->width
-    && ball->x >= player->x + player->width/2 
+    && ball->x >= player->x
     && ball->y >= player->y - BUFFER 
     && (ball->y + ball->size) <= player->y + player->height + BUFFER)
     {
@@ -366,7 +341,7 @@ int collides(struct ball *ball, struct paddle *player, struct paddle *computer)
 }
 void set_ball_speed(struct ball *ball, int count)
 {
-    if (count % 100 == 0 && ball->x_vel < 10 && ball->x_vel > -10)
+    if (count % 100 == 0 && ball->x_vel < 5 && ball->x_vel > -5)
     {
         count = 0;
         if (ball->x_vel > 0)
@@ -546,25 +521,7 @@ void move_computer_adaptive(struct paddle *computer, struct paddle *player, stru
     }
 }
 
-void play_music(int sel)
-{
-    P1OUT &= ~(BIT2 + BIT3);
-    sel = sel << 2;
-    P1OUT |= sel;
-    P1OUT |= BIT4;
-    __delay_cycles(5000); // DELAY FOR 5000 microseconds = 5 milliseconds
-    P1OUT &= ~BIT4;
-}
-void move_ball(struct ball *ball)
-{
-    if (ball->y <= 0 || ball->y >= 60)
-    {
-        ball->y_vel = -ball->y_vel;
-    }
 
-    ball->x += ball->x_vel;
-    ball->y += ball->y_vel;
-}
 
 char get_adc_position()
 {
@@ -603,6 +560,7 @@ void set_up_game(struct paddle *player, struct paddle *computer, struct ball *ba
 
 void check_collision(struct ball *ball, struct paddle *player, struct paddle *computer)
 {
+     struct paddle *paddle;           
 
     if (collides(ball, player, computer))
     {
@@ -610,12 +568,16 @@ void check_collision(struct ball *ball, struct paddle *player, struct paddle *co
         if (ball->x_vel < 0)
         {
             ball->x = player->x + player->width + 1;
+            paddle = player;
+            
         }
         else
         {
             ball->x = computer->x - ball->size - 1;
+            paddle = computer;
         }
         ball->x_vel = -ball->x_vel;
+        ball->y_vel = ((ball ->y) - (paddle->y + paddle->height / 2)) / 2;
     }
 }
 
@@ -665,6 +627,8 @@ void update_score(struct paddle *player, struct paddle *computer, struct ball *b
         P7OUT = 0b00000001;
     }
 }
+
+
 void main(void)
 {
     // Stop the watchdog timer so it doesn't reset our chip
@@ -685,21 +649,6 @@ void main(void)
 
     int count = 0;
 
-    // while(1){
-    //     char c = get_adc_position();
-    //     clear_rectangle(player.x, player.y, player.width, player.height);
-    //     clear_rectangle(computer.x, computer.y, computer.width, computer.height);
-    //     // clear_rectangle(ball.x, ball.y, ball.size, ball.size);
-
-
-    //     move_player(&player, c);
-    //     move_computer_basic(&computer, ball.y);
-    //     move_ball(&ball);
-
-    //     // draw_rectangle(ball.x, ball.y, ball.size, ball.size);
-    //     draw_rectangle(player.x, player.y, player.width, player.height);
-    //     draw_rectangle(computer.x, computer.y, computer.width, computer.height);
-    // }
     while (1)
     {
         count++;
@@ -708,7 +657,8 @@ void main(void)
         clear_rectangle(player.x, player.y, player.width, player.height);
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
         clear_ball(ball.x, ball.y);
-        move_player(&player, adc_position);
+         move_player(&player, adc_position);
+//        move_computer_insane(&player, ball.y, ball.y_vel);
         // move_computer_basic(&computer, ball.y);
         move_computer_insane(&computer, ball.y, ball.y_vel);
         // move_computer_adaptive(&computer, &player, ball.y, ball.y_vel, ball.x_vel);
