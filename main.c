@@ -300,6 +300,8 @@ void clear_rectangle(int x, int y, int width, int height)
     }
 }
 
+
+
 void play_music(int sel)
 {
     P1OUT &= ~(BIT2 + BIT3);
@@ -476,20 +478,11 @@ void move_computer_adaptive(struct paddle *computer, struct paddle *player, stru
         }
         else
         {
-            // Predict the bouncing behavior of the ball
-            int temp_y = ball->y;
-            int temp_y_vel = ball->y_vel;
-            int prediction_limit = 100;
-            int prediction_count = 0;
-            while (ball->x + ball->x_vel * (temp_y / abs(temp_y_vel)) < computer->x && prediction_count < prediction_limit)
-            {
-                temp_y += temp_y_vel;
-                if (temp_y <= 0 || temp_y >= 60)
-                {
-                    temp_y_vel = -temp_y_vel;
-                }
-            }
-            target_y = temp_y - computer->height / 2;
+            // Move the paddle towards the ball's y-coordinate
+            // add a non-zero random number to make the AI more human-like
+            int rand_num = rand() % 7 - 3;
+            target_y = ball->y - computer->height / 2 + rand_num;
+            //target_y = ball->y - computer->height / 2 + rand() % 7 - 3;// adds a random
         }
     }
 
@@ -660,9 +653,8 @@ void main(void)
          move_player(&player, adc_position);
 //        move_computer_insane(&player, ball.y, ball.y_vel);
         // move_computer_basic(&computer, ball.y);
-        move_computer_insane(&computer, ball.y, ball.y_vel);
-        // move_computer_adaptive(&computer, &player, ball.y, ball.y_vel, ball.x_vel);
-        // move_computer_adaptive(&computer, &player, &ball);
+        // move_computer_insane(&computer, ball.y, ball.y_vel);
+        move_computer_adaptive(&computer, &player, &ball);
         move_ball(&ball);
         check_collision(&ball, &player, &computer);
         update_score(&player, &computer, &ball);
