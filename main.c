@@ -5,9 +5,27 @@
 #define MOSI BIT0 // Master-out Slave-in
 #define SCK BIT2  // Serial clock
 
-unsigned char game_screen[8][102] = {0};
+// LCG parameters
+#define LCG_A 1103515245
+#define LCG_C 12345
+#define LCG_M 2147483648 // 2^31
 
-int exit = 0;
+unsigned int lcg_seed = 1; // Seed value for LCG
+
+// Function to generate random numbers using LCG algorithm
+int lcg_rand()
+{
+    lcg_seed = (LCG_A * lcg_seed + LCG_C) % LCG_M;
+    return (int)lcg_seed;
+}
+
+// Function to seed the LCG random number generator
+void lcg_srand()
+{
+    ADC12CTL0 |= ADC12SC; // Start sampling
+    while (ADC12CTL1 & ADC12BUSY); // while bit ADC12BUSY in register ADC12CTL1 is high wait
+    lcg_seed = ADC12MEM0 % 64;
+}
 
 struct ball
 {
@@ -284,6 +302,7 @@ void set_ball_speed(struct ball *ball, int count)
 {
     if (count % 100 == 0 && ball->x_vel < 10 && ball->x_vel > -10)
     {
+        count = 0;
         if (ball->x_vel > 0)
         {
             ball->x_vel++;
@@ -350,7 +369,7 @@ void move_player(struct paddle *player, int y)
     }
     else if (y >= 49)
     {
-        player->y = 49;
+        player->y = 48;
     }
     else
     {
@@ -388,6 +407,142 @@ void move_computer_basic(struct paddle *computer, int y)
         computer->y = y;
     }
 }
+void move_computer_gpt1(struct paddle *computer, struct paddle *player, int y, int ball_vel, int ball_size)
+{
+    int chance_of_mistake = 10; // 10% chance of making a mistake
+    int mistake_margin = 5;     // How much the AI paddle will miss by
+    int reaction_delay = 3;     // Delay in reacting to the ball's movement
+
+    static int previous_y = -1;
+    static int delay_counter = 0;
+
+    // React to the ball's movement after a certain delay
+    if (delay_counter < reaction_delay)
+    {
+        delay_counter++;
+        return;
+    }
+
+    delay_counter = 0;
+
+    int target_y;
+
+    // Occasionally make a mistake
+    if (lcg_rand() % 100 < chance_of_mistake)
+    {
+        target_y = y + ((lcg_rand() % 2) ? mistake_margin : -mistake_margin);
+    }
+    else
+    {
+        // Predict the bouncing behavior of the ball
+        int y_after_bounce = y + ball_vel;
+        if (y_after_bounce < 0 || y_after_bounce > 60)
+        {
+            y_after_bounce = y - ball_vel;
+        }
+        target_y = y_after_bounce - computer->height / 2;
+    }
+
+    // Limit the paddle's movement speed
+    int speed_limit = player->height / 4;
+    int y_diff = target_y - previous_y;
+
+    if (y_diff > speed_limit)
+    {
+        target_y = previous_y + speed_limit;
+    }
+    else if (y_diff < -speed_limit)
+    {
+        target_y = previous_y - speed_limit;
+    }
+
+    previous_y = target_y;
+
+    // Keep the paddle within the screen boundaries
+    if (target_y - computer->height / 2 < 0)
+    {
+        computer->y = 0;
+    }
+    else if (target_y - computer->height / 2 > 49)
+    {
+        computer->y = 49;
+    }
+    else
+    {
+        computer->y = target_y;
+    }
+}
+
+void move_computer_adaptive(struct paddle *computer, struct paddle *player, struct ball *ball)
+{
+    int chance_of_mistake = 10; // 10% chance of making a mistake
+    int mistake_margin = 5;     // How much the AI paddle will miss by
+    int reaction_delay = 3;     // Delay in reacting to the ball's movement
+
+    static int delay_counter = 0;
+    static int target_y = -1;
+
+    if (ball->x_vel > 0)
+    {
+        // React to the ball's movement after a certain delay
+        if (delay_counter < reaction_delay)
+        {
+            delay_counter++;
+            return;
+        }
+
+        delay_counter = 0;
+
+        // Occasionally make a mistake
+        if (lcg_rand() % 100 < chance_of_mistake)
+        {
+            target_y = ball->y + ((lcg_rand() % 2) ? mistake_margin : -mistake_margin);
+        }
+        else
+        {
+            // Predict the bouncing behavior of the ball
+            int temp_y = ball->y;
+            int temp_y_vel = ball->y_vel;
+            while (ball->x + ball->x_vel * (temp_y / abs(temp_y_vel)) < computer->x)
+            {
+                temp_y += temp_y_vel;
+                if (temp_y <= 0 || temp_y >= 60)
+                {
+                    temp_y_vel = -temp_y_vel;
+                }
+            }
+            target_y = temp_y - computer->height / 2;
+        }
+    }
+
+    // Keep the paddle within the screen boundaries
+    if (target_y - computer->height / 2 < 0)
+    {
+        target_y = 0;
+    }
+    else if (target_y - computer->height / 2 > 49)
+    {
+        target_y = 48;
+    }
+
+    // Move the paddle smoothly towards the target position
+    int speed_limit = player->height / 2;
+    int y_diff = target_y - computer->y;
+
+    if (y_diff > speed_limit)
+    {
+        computer->y += speed_limit;
+    }
+    else if (y_diff < -speed_limit)
+    {
+        computer->y -= speed_limit;
+    }
+    else
+    {
+        computer->y = target_y;
+    }
+}
+
 void play_music(int sel)
 {
     P1OUT &= ~(BIT2 + BIT3);
@@ -419,10 +574,9 @@ char get_adc_position()
 
 void set_up_game(struct paddle *player, struct paddle *computer, struct ball *ball)
 {
-    srand(time(0));
 
     // Generate a random number between 0 and 1
-    int random_num = rand() % 2;
+    int random_num = lcg_rand() % 2;
     random_num = (random_num == 0) ? 1 : -1;
     player->x = 10;
     player->y = 49;
@@ -444,8 +598,37 @@ void set_up_game(struct paddle *player, struct paddle *computer, struct ball *ba
     ball->y_vel = random_num;
 }
 
+// void check_collision(struct ball *ball, struct paddle *player, struct paddle *computer)
+// {
+//     int hit_margin = 1;
+//     float ball_speed = sqrt(ball->x_vel * ball->x_vel + ball->y_vel * ball->y_vel);
+
+//     // Check for collision with player paddle
+//     if (ball->x <= player->x + player->width + hit_margin && ball->x >= player->x + player->width &&
+//         ball->y + ball->size >= player->y && ball->y <= player->y + player->height)
+//     {
+//         play_music(1);
+//         ball->x_vel = -ball->x_vel;
+//         float relative_y = (float)(ball->y + ball->size / 2 - player->y) / player->height;
+//         float angle = relative_y * MAX_BOUNCE_ANGLE - MAX_BOUNCE_ANGLE / 2;
+//         ball->y_vel = (int)(ball_speed * sin(angle));
+//     }
+
+//     // Check for collision with computer paddle
+//     if (ball->x + ball->size >= computer->x - hit_margin && ball->x + ball->size <= computer->x &&
+//         ball->y + ball->size >= computer->y && ball->y <= computer->y + computer->height)
+//     {
+//         play_music(1);
+//         ball->x_vel = -ball->x_vel;
+//         float relative_y = (float)(ball->y + ball->size / 2 - computer->y) / computer->height;
+//         float angle = relative_y * MAX_BOUNCE_ANGLE - MAX_BOUNCE_ANGLE / 2;
+//         ball->y_vel = (int)(ball_speed * sin(angle));
+//     }
+// }
+
 void check_collision(struct ball *ball, struct paddle *player, struct paddle *computer)
 {
+
     if (collides(ball, player, computer))
     {
         play_music(1);
@@ -463,22 +646,21 @@ void check_collision(struct ball *ball, struct paddle *player, struct paddle *co
 
 void update_score(struct paddle *player, struct paddle *computer, struct ball *ball)
 {
+    // Generate a random number between 0 and 1
+    int random_num_x = lcg_rand() % 2;
+    random_num_x = (random_num_x == 0) ? 1 : -1;
+    int random_num_y = lcg_rand() % 2;
+    random_num_y = (random_num_y == 0) ? 1 : -1;
 
     if (ball->x <= 0)
     {
-        srand(time(0));
-
-        // Generate a random number between 0 and 1
-        int random_num = rand() % 2;
-        random_num = (random_num == 0) ? 1 : -1;
         computer->score++;
         play_music(0);
-        // set_up_game(player, computer, ball);
         ball->x = 47;
         ball->y = 28;
         ball->size = 4;
-        ball->x_vel = 1;
-        ball->y_vel = random_num;
+        ball->x_vel = random_num_x;
+        ball->y_vel = random_num_y;
 
         P4OUT = computer->score / 10;
         P8OUT = 2;
@@ -491,19 +673,13 @@ void update_score(struct paddle *player, struct paddle *computer, struct ball *b
     }
     else if (ball->x >= 95)
     {
-        srand(time(0));
-
-        // Generate a random number between 0 and 1
-        int random_num = rand() % 2;
-        random_num = (random_num == 0) ? 1 : -1;
         player->score++;
         play_music(0);
         ball->x = 47;
         ball->y = 28;
         ball->size = 4;
-        ball->x_vel = 1;
-        ball->y_vel = random_num;
-        // set_up_game(player, computer, ball);
+        ball->x_vel = random_num_x;
+        ball->y_vel = random_num_y;
         P4OUT = player->score / 10;
         P8OUT = 6;
         P7OUT = 0b00000000;
@@ -542,11 +718,13 @@ void main(void)
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
         clear_rectangle(ball.x, ball.y, ball.size, ball.size);
         move_player(&player, adc_position);
-         move_computer_basic(&computer, ball.y);
-//        move_computer_insane(&computer, ball.y, ball.y_vel);
+        // move_computer_basic(&computer, ball.y);
+        move_computer_insane(&computer, ball.y, ball.y_vel);
+        // move_computer_adaptive(&computer, &player, ball.y, ball.y_vel, ball.x_vel);
+        // move_computer_adaptive(&computer, &player, &ball);
         move_ball(&ball);
-        update_score(&player, &computer, &ball);
         check_collision(&ball, &player, &computer);
+        update_score(&player, &computer, &ball);
         draw_rectangle(player.x, player.y, player.width, player.height);
         draw_rectangle(computer.x, computer.y, computer.width, computer.height);
         draw_rectangle(ball.x, ball.y, ball.size, ball.size);
