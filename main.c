@@ -5,7 +5,6 @@
 #define MOSI BIT0 // Master-out Slave-in
 #define SCK BIT2  // Serial clock
 
-
 struct ball
 {
     int x;
@@ -377,78 +376,13 @@ void move_computer_basic(struct paddle *computer, int y)
     {
         computer->y = 0;
     }
-    else if (y - computer->height / 2 > 49)
+    else if (y - computer->height / 2 > 48)
     {
         computer->y = 49;
     }
     else
     {
         computer->y = y;
-    }
-}
-void move_computer_gpt1(struct paddle *computer, struct paddle *player, int y, int ball_vel, int ball_size)
-{
-    int chance_of_mistake = 10; // 10% chance of making a mistake
-    int mistake_margin = 5;     // How much the AI paddle will miss by
-    int reaction_delay = 3;     // Delay in reacting to the ball's movement
-
-    static int previous_y = -1;
-    static int delay_counter = 0;
-
-    // React to the ball's movement after a certain delay
-    if (delay_counter < reaction_delay)
-    {
-        delay_counter++;
-        return;
-    }
-
-    delay_counter = 0;
-
-    int target_y;
-
-    // Occasionally make a mistake
-    if (rand() % 100 < chance_of_mistake)
-    {
-        target_y = y + ((rand() % 2) ? mistake_margin : -mistake_margin);
-    }
-    else
-    {
-        // Predict the bouncing behavior of the ball
-        int y_after_bounce = y + ball_vel;
-        if (y_after_bounce < 0 || y_after_bounce > 60)
-        {
-            y_after_bounce = y - ball_vel;
-        }
-        target_y = y_after_bounce - computer->height / 2;
-    }
-
-    // Limit the paddle's movement speed
-    int speed_limit = player->height / 4;
-    int y_diff = target_y - previous_y;
-
-    if (y_diff > speed_limit)
-    {
-        target_y = previous_y + speed_limit;
-    }
-    else if (y_diff < -speed_limit)
-    {
-        target_y = previous_y - speed_limit;
-    }
-
-    previous_y = target_y;
-
-    // Keep the paddle within the screen boundaries
-    if (target_y - computer->height / 2 < 0)
-    {
-        computer->y = 0;
-    }
-    else if (target_y - computer->height / 2 > 49)
-    {
-        computer->y = 49;
-    }
-    else
-    {
-        computer->y = target_y;
     }
 }
 
@@ -482,7 +416,9 @@ void move_computer_adaptive(struct paddle *computer, struct paddle *player, stru
             // Predict the bouncing behavior of the ball
             int temp_y = ball->y;
             int temp_y_vel = ball->y_vel;
-            while (ball->x + ball->x_vel * (temp_y / abs(temp_y_vel)) < computer->x)
+            int prediction_limit = 100;
+            int prediction_count = 0;
+            while (ball->x + ball->x_vel * (temp_y / abs(temp_y_vel)) < computer->x && prediction_count < prediction_limit)
             {
                 temp_y += temp_y_vel;
                 if (temp_y <= 0 || temp_y >= 60)
@@ -495,11 +431,11 @@ void move_computer_adaptive(struct paddle *computer, struct paddle *player, stru
     }
 
     // Keep the paddle within the screen boundaries
-    if (target_y - computer->height / 2 < 0)
+    if (target_y < 0)
     {
         target_y = 0;
     }
-    else if (target_y - computer->height / 2 > 49)
+    else if (target_y > 48)
     {
         target_y = 48;
     }
@@ -631,7 +567,7 @@ void update_score(struct paddle *player, struct paddle *computer, struct ball *b
     int random_num_y = rand() % 2;
     random_num_y = (random_num_y == 0) ? 1 : -1;
 
-    if (ball->x <= 0)
+    if (ball->x <= 17)
     {
         computer->score++;
         play_music(0);
@@ -650,7 +586,7 @@ void update_score(struct paddle *player, struct paddle *computer, struct ball *b
         P7OUT = 0b00000000;
         P7OUT = 0b00000001;
     }
-    else if (ball->x >= 95)
+    else if (ball->x >= 87)
     {
         player->score++;
         play_music(0);
@@ -699,9 +635,9 @@ void main(void)
         clear_rectangle(ball.x, ball.y, ball.size, ball.size);
         move_player(&player, adc_position);
         // move_computer_basic(&computer, ball.y);
-        move_computer_insane(&computer, ball.y, ball.y_vel);
+        // move_computer_insane(&computer, ball.y, ball.y_vel);
         // move_computer_adaptive(&computer, &player, ball.y, ball.y_vel, ball.x_vel);
-        // move_computer_adaptive(&computer, &player, &ball);
+        move_computer_adaptive(&computer, &player, &ball);
         move_ball(&ball);
         check_collision(&ball, &player, &computer);
         update_score(&player, &computer, &ball);
