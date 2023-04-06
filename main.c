@@ -526,33 +526,6 @@ void set_up_game(struct paddle *player, struct paddle *computer, struct ball *ba
     ball->y_vel = random_num;
 }
 
-// void check_collision(struct ball *ball, struct paddle *player, struct paddle *computer)
-// {
-//     int hit_margin = 1;
-//     float ball_speed = sqrt(ball->x_vel * ball->x_vel + ball->y_vel * ball->y_vel);
-
-//     // Check for collision with player paddle
-//     if (ball->x <= player->x + player->width + hit_margin && ball->x >= player->x + player->width &&
-//         ball->y + ball->size >= player->y && ball->y <= player->y + player->height)
-//     {
-//         play_music(1);
-//         ball->x_vel = -ball->x_vel;
-//         float relative_y = (float)(ball->y + ball->size / 2 - player->y) / player->height;
-//         float angle = relative_y * MAX_BOUNCE_ANGLE - MAX_BOUNCE_ANGLE / 2;
-//         ball->y_vel = (int)(ball_speed * sin(angle));
-//     }
-
-//     // Check for collision with computer paddle
-//     if (ball->x + ball->size >= computer->x - hit_margin && ball->x + ball->size <= computer->x &&
-//         ball->y + ball->size >= computer->y && ball->y <= computer->y + computer->height)
-//     {
-//         play_music(1);
-//         ball->x_vel = -ball->x_vel;
-//         float relative_y = (float)(ball->y + ball->size / 2 - computer->y) / computer->height;
-//         float angle = relative_y * MAX_BOUNCE_ANGLE - MAX_BOUNCE_ANGLE / 2;
-//         ball->y_vel = (int)(ball_speed * sin(angle));
-//     }
-// }
 
 void check_collision(struct ball *ball, struct paddle *player, struct paddle *computer)
 {
