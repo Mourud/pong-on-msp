@@ -5,27 +5,6 @@
 #define MOSI BIT0 // Master-out Slave-in
 #define SCK BIT2  // Serial clock
 
-// LCG parameters
-#define LCG_A 1103515245
-#define LCG_C 12345
-#define LCG_M 2147483648 // 2^31
-
-unsigned int lcg_seed = 1; // Seed value for LCG
-
-// Function to generate random numbers using LCG algorithm
-int lcg_rand()
-{
-    lcg_seed = (LCG_A * lcg_seed + LCG_C) % LCG_M;
-    return (int)lcg_seed;
-}
-
-// Function to seed the LCG random number generator
-void lcg_srand()
-{
-    ADC12CTL0 |= ADC12SC; // Start sampling
-    while (ADC12CTL1 & ADC12BUSY); // while bit ADC12BUSY in register ADC12CTL1 is high wait
-    lcg_seed = ADC12MEM0 % 64;
-}
 
 struct ball
 {
@@ -428,9 +407,9 @@ void move_computer_gpt1(struct paddle *computer, struct paddle *player, int y, i
     int target_y;
 
     // Occasionally make a mistake
-    if (lcg_rand() % 100 < chance_of_mistake)
+    if (rand() % 100 < chance_of_mistake)
     {
-        target_y = y + ((lcg_rand() % 2) ? mistake_margin : -mistake_margin);
+        target_y = y + ((rand() % 2) ? mistake_margin : -mistake_margin);
     }
     else
     {
@@ -494,9 +473,9 @@ void move_computer_adaptive(struct paddle *computer, struct paddle *player, stru
         delay_counter = 0;
 
         // Occasionally make a mistake
-        if (lcg_rand() % 100 < chance_of_mistake)
+        if (rand() % 100 < chance_of_mistake)
         {
-            target_y = ball->y + ((lcg_rand() % 2) ? mistake_margin : -mistake_margin);
+            target_y = ball->y + ((rand() % 2) ? mistake_margin : -mistake_margin);
         }
         else
         {
@@ -576,7 +555,7 @@ void set_up_game(struct paddle *player, struct paddle *computer, struct ball *ba
 {
 
     // Generate a random number between 0 and 1
-    int random_num = lcg_rand() % 2;
+    int random_num = rand() % 2;
     random_num = (random_num == 0) ? 1 : -1;
     player->x = 10;
     player->y = 49;
@@ -647,9 +626,9 @@ void check_collision(struct ball *ball, struct paddle *player, struct paddle *co
 void update_score(struct paddle *player, struct paddle *computer, struct ball *ball)
 {
     // Generate a random number between 0 and 1
-    int random_num_x = lcg_rand() % 2;
+    int random_num_x = rand() % 2;
     random_num_x = (random_num_x == 0) ? 1 : -1;
-    int random_num_y = lcg_rand() % 2;
+    int random_num_y = rand() % 2;
     random_num_y = (random_num_y == 0) ? 1 : -1;
 
     if (ball->x <= 0)
@@ -695,6 +674,7 @@ void main(void)
     // Stop the watchdog timer so it doesn't reset our chip
     WDTCTL = WDTPW + WDTHOLD;
     P1DIR |= (BIT2 + BIT3 + BIT4);
+    srand(time(0));
     init_MPD();
     init_SPI();
     __delay_cycles(5500); // Pause so everything has time to start up properly.
