@@ -150,10 +150,11 @@ void write_ones(void)
     }
 }
 
+#include <stdlib.h>
+
 void draw_rectangle(int x, int y, int width, int height)
 {
     int page_start, page_end, i, j, page;
-    unsigned char data[17] = {0};
 
     // Calculate the start and end pages for the rectangle
     page_start = y / 8;
@@ -161,12 +162,15 @@ void draw_rectangle(int x, int y, int width, int height)
 
     for (page = page_start; page <= page_end; page++)
     {
+        unsigned char cmd_data[3] = {0};
+        P3OUT &= ~CD;                           // set for commands
+        cmd_data[0] = 0xB0 + page;              // set page
+        cmd_data[1] = 0x00 + (x & 0x0F);        // LSB of column address
+        cmd_data[2] = 0x10 + ((x >> 4) & 0x0F); // MSB of column address
+        spi_IO(cmd_data, 3);
 
-        P3OUT &= ~CD;                       // set for commands
-        data[0] = 0xB0 + page;              // set page
-        data[1] = 0x00 + (x & 0x0F);        // LSB of column address
-        data[2] = 0x10 + ((x >> 4) & 0x0F); // MSB of column address
-        spi_IO(data, 3);
+        // Create a dynamic data array based on width
+        unsigned char *data = (unsigned char *)malloc(width * sizeof(unsigned char));
 
         P3OUT |= CD; // set for data
         for (i = 0; i < width; i++)
@@ -187,13 +191,15 @@ void draw_rectangle(int x, int y, int width, int height)
         }
 
         spi_IO(data, width);
+
+        // Free the memory allocated for the data array
+        free(data);
     }
 }
 
 void clear_rectangle(int x, int y, int width, int height)
 {
     int page_start, page_end, i, j, page;
-    unsigned char data[17];
 
     // Calculate the start and end pages for the rectangle
     page_start = y / 8;
@@ -201,11 +207,15 @@ void clear_rectangle(int x, int y, int width, int height)
 
     for (page = page_start; page <= page_end; page++)
     {
-        P3OUT &= ~CD;                       // set for commands
-        data[0] = 0xB0 + page;              // set page
-        data[1] = 0x00 + (x & 0x0F);        // LSB of column address
-        data[2] = 0x10 + ((x >> 4) & 0x0F); // MSB of column address
-        spi_IO(data, 3);
+        unsigned char cmd_data[3] = {0};
+        P3OUT &= ~CD;                           // set for commands
+        cmd_data[0] = 0xB0 + page;              // set page
+        cmd_data[1] = 0x00 + (x & 0x0F);        // LSB of column address
+        cmd_data[2] = 0x10 + ((x >> 4) & 0x0F); // MSB of column address
+        spi_IO(cmd_data, 3);
+
+        // Create a dynamic data array based on width
+        unsigned char *data = (unsigned char *)malloc(width * sizeof(unsigned char));
 
         P3OUT |= CD; // set for data
         for (i = 0; i < width; i++)
@@ -215,6 +225,9 @@ void clear_rectangle(int x, int y, int width, int height)
         }
 
         spi_IO(data, width);
+
+        // Free the memory allocated for the data array
+        free(data);
     }
 }
 
