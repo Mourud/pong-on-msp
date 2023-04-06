@@ -150,8 +150,6 @@ void write_ones(void)
     }
 }
 
-#include <stdlib.h>
-
 void draw_rectangle(int x, int y, int width, int height)
 {
     int page_start, page_end, i, j, page;
