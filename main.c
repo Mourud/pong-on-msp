@@ -344,13 +344,21 @@ void test(void)
     }
 }
 
+
 int collides(struct ball *ball, struct paddle *player, struct paddle *computer)
 {
-    if ((ball->x + ball->size) > computer->x && ball->y > computer->y && (ball->y + ball->size) < (computer->y + computer->height))
+    int BUFFER = 2;
+    if (ball->x + ball->size > computer->x 
+    && ball->x <= computer->x + computer->width/2 
+    && ball->y >= computer->y - BUFFER 
+    && (ball->y + ball->size) <= computer->y + computer->height + BUFFER)
     {
         return 1;
     }
-    if (ball->x < (player->x + player->width) && ball->y > player->y && (ball->y + ball->size) < (player->y + player->height))
+    if (ball->x < player->x + player->width
+    && ball->x >= player->x + player->width/2 
+    && ball->y >= player->y - BUFFER 
+    && (ball->y + ball->size) <= player->y + player->height + BUFFER)
     {
         return 1;
     }
