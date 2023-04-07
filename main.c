@@ -1,6 +1,7 @@
 #include <msp430.h>
 #include <stdlib.h>
 #include <time.h>
+#include <font_8x8.h>
 
 #define CS BIT3   // Chip Select line
 #define CD BIT1   // Command/Data mode line
@@ -300,7 +301,6 @@ void clear_rectangle(int x, int y, int width, int height)
     }
 }
 
-
 void play_music(int sel)
 {
     P1OUT &= ~(BIT2 + BIT3);
@@ -566,7 +566,7 @@ void check_collision(struct ball *ball, struct paddle *player, struct paddle *co
 
 void update_score(struct paddle *player, struct paddle *computer, struct ball *ball)
 {
-    
+
     // Generate a random number between 0 and 1
     int random_num_x = rand() % 2;
     random_num_x = (random_num_x == 0) ? 1 : -1;
@@ -612,14 +612,95 @@ void update_score(struct paddle *player, struct paddle *computer, struct ball *b
     }
 }
 
-void check_game_over(struct paddle *player, struct paddle *computer, struct ball *ball){
-    
-    if(player -> score == 5 || computer -> score == 5 ){
+void check_game_over(struct paddle *player, struct paddle *computer, struct ball *ball)
+{
 
-        
+    if (player->score == 5 || computer->score == 5)
+    {
+
         start_animation();
         set_up_game(player, computer, ball);
         init_MPD();
+    }
+}
+
+void send_byte(unsigned char word)
+{
+    int n;
+    for (n = 8; n != 0; n--)
+    {
+        if (word & 0x80)
+            P3OUT |= MOSI;
+        else
+            P3OUT &= ~MOSI;
+        word <<= 1;
+
+        // Pulse clock
+        P3OUT &= ~SCK;
+        __delay_cycles(1);
+        P3OUT |= SCK;
+        __delay_cycles(1);
+    }
+}
+void draw_string(unsigned char column,
+                 unsigned char page,
+                 const unsigned char *font_adress,
+                 const char *str)
+{
+
+    unsigned int pos_array;                                                // Postion of character data in memory array
+    unsigned char x, y, column_cnt, width_max;                             // temporary column and page adress, couloumn_cnt tand width_max are used to stay inside display area
+    unsigned char start_code, last_code, width, page_height, bytes_p_char; // font information, needed for calculation
+    const char *string;
+
+    start_code = font_adress[2];   // get first defined character
+    last_code = font_adress[3];    // get last defined character
+    width = font_adress[4];        // width in pixel of one char
+    page_height = font_adress[6];  // page count per char
+    bytes_p_char = font_adress[7]; // bytes per char
+
+    if (page_height + page > 8) // stay inside display area
+        page_height = 8 - page;
+
+    // The string is displayed character after character. If the font has more then one page,
+    // the top page is printed first, then the next page and so on
+    for (y = 0; y < page_height; y++)
+    {
+        unsigned char cmd_data[3] = {0};
+        P3OUT &= ~CD;                           // set for commands
+        cmd_data[0] = 0xB0 + page;              // set page
+        cmd_data[1] = 0x00 + (x & 0x0F);        // LSB of column address
+        cmd_data[2] = 0x10 + ((x & 0xF0) >> 4); // MSB of column address
+        spi_IO(cmd_data, 3); // set startpositon and page
+        column_cnt = column;        // store column for display last column check
+        string = str;               // temporary pointer to the beginning of the string to print
+
+        P3OUT |= CD;
+        P3OUT &= ~CS;
+
+        while (*string != 0)
+        {
+            if ((unsigned char)*string < start_code || (unsigned char)*string > last_code) // make sure data is valid
+                string++;
+            else
+            {
+                // calculate positon of ascii character in font array
+                // bytes for header + (ascii - startcode) * bytes per char)
+                pos_array = 8 + (unsigned int)(*string++ - start_code) * bytes_p_char;
+                pos_array += y * width; // get the dot pattern for the part of the char to print
+
+                if (column_cnt + width > 102) // stay inside display area
+                    width_max = 102 - column_cnt;
+                else
+                    width_max = width;
+                for (x = 0; x < width_max; x++) // print the whole string
+                {
+                    send_byte(font_adress[pos_array + x]);
+                }
+                column_cnt += width;
+            }
+        }
+        P3OUT |= CS;
     }
 }
 
@@ -642,8 +723,10 @@ void main(void)
     set_up_game(&player, &computer, &ball);
 
     int count = 0;
+    char str[] = {'P', 'O', 'N', 'G'};
+    draw_string(51, 3, font_8x8, str);
 
-    while (1)
+    while(1)
     {
         count++;
         set_ball_speed(&ball, count);
