@@ -8,6 +8,7 @@
 #define MOSI BIT0 // Master-out Slave-in
 #define SCK BIT2  // Serial clock
 
+// TODO: ADD GAME CONSTANTS HERE
 struct ball
 {
     int x;
@@ -152,6 +153,9 @@ void write_ones(void)
         }
     }
 }
+
+/* Draws a ball on the screen.  The ball is defined by
+ * the upper left corner (x, y) */
 void draw_ball(int x, int y)
 {
     int ball_size = 4;
@@ -193,6 +197,8 @@ void draw_ball(int x, int y)
     }
 }
 
+/* Clears a ball on the screen.  The ball is defined by
+ * the upper left corner (x, y) */
 void clear_ball(int x, int y)
 {
     int ball_size = 4;
@@ -222,6 +228,8 @@ void clear_ball(int x, int y)
     }
 }
 
+/* Draws a rectangle on the screen.  The rectangle is defined by
+ * the upper left corner (x, y) and the width and height */
 void draw_rectangle(int x, int y, int width, int height)
 {
     int page_start, page_end, i, page;
@@ -267,6 +275,8 @@ void draw_rectangle(int x, int y, int width, int height)
     }
 }
 
+/* Clears a rectangle on the screen.  The rectangle is defined by
+ * the upper left corner (x, y) and the width and height */
 void clear_rectangle(int x, int y, int width, int height)
 {
     int page_start, page_end, i, page;
@@ -301,6 +311,13 @@ void clear_rectangle(int x, int y, int width, int height)
     }
 }
 
+/* Sends music select signal to other MSP430
+ * sel = 0 | 1 | 2 | 3
+ * 0 = score sound
+ * 1 = paddle hit sound
+ * 2 = intro music
+ * 3 = game over music
+ */
 void play_music(int sel)
 {
     P1OUT &= ~(BIT2 + BIT3);
@@ -310,6 +327,10 @@ void play_music(int sel)
     __delay_cycles(5000); // DELAY FOR 5000 microseconds = 5 milliseconds
     P1OUT &= ~BIT4;
 }
+
+/* Moves the ball based on its velocity defined
+ * by x_vel and y_vel inside the ball struct
+ */
 void move_ball(struct ball *ball)
 {
     if (ball->y <= 0 || ball->y >= 59)
@@ -321,19 +342,32 @@ void move_ball(struct ball *ball)
     ball->y += ball->y_vel;
 }
 
+/* Checks if the ball has collided with a paddle
+ * Returns 1 if collision detected, 0 otherwise
+ * Collision detetion has a BUFFER of 2 pixels
+ * to allow for a little bit of leeway
+ */
 int collides(struct ball *ball, struct paddle *player, struct paddle *computer)
 {
     int BUFFER = 2;
+
+    // Computer paddle
     if (ball->x + ball->size > computer->x && ball->x <= computer->x + computer->width && ball->y >= computer->y - BUFFER && (ball->y + ball->size) <= computer->y + computer->height + BUFFER)
     {
         return 1;
     }
-    if (ball->x < player->x + player->width && ball->x >= player->x && ball->y >= player->y - BUFFER && (ball->y + ball->size) <= player->y + player->height + BUFFER)
+    // Player paddle
+    if (ball->x < player->x + player->width && ball->x >= player->x && ball->y >= player->y - BUFFER - ball->size && (ball->y + ball->size) <= player->y + player->height + BUFFER)
     {
         return 1;
     }
     return 0;
 }
+
+/* Inceases the speed of the ball by 1 pixel
+ * every 100 frames
+ */
+// TODO: Increase y_vel as well
 void set_ball_speed(struct ball *ball, int count)
 {
     if (count % 100 == 0 && ball->x_vel < 5 && ball->x_vel > -5)
@@ -350,6 +384,13 @@ void set_ball_speed(struct ball *ball, int count)
     }
 }
 
+/* Initializes PINS for SPI communication
+ * SCK = P3.2
+ * MOSI = P3.0
+ * CS = P3.3
+ * CD = P3.1
+ */
+
 void init_SPI()
 {
     // These are the pins we need to drive.
@@ -357,6 +398,9 @@ void init_SPI()
     // De-select the LCD panel and set the clock high.
     P3OUT |= CS + SCK;
 }
+
+/* Initializes ADC on pin 6.0
+ */
 void init_ADC()
 {
     ADC12CTL0 = ADC12SHT02 + ADC12ON; // Sampling time, ADC12 on
@@ -368,6 +412,11 @@ void init_ADC()
                                       // one is selected on reset so this line is not needed
 }
 
+/* Initialize PINS for the 7-Segment Display and set to 0
+ * P4.0(LSD) - P4.3(MSD) = Data
+ * P8.1(LSD) - P8.2(MSD) = Latch
+ * P7.0 = Strobe
+ */
 void init_MPD()
 {
     P4DIR |= (BIT0 + BIT1 + BIT2 + BIT3);
@@ -388,6 +437,8 @@ void init_MPD()
     }
 }
 
+/* Plays game start music and draw through every page and clears them
+ */
 void start_animation()
 {
     play_music(2);
@@ -397,13 +448,17 @@ void start_animation()
     write_zeros();
 }
 
+/* Moves player to the y coordinate
+ * If y is out of bounds, it will be set to the closest
+ * possible value
+ */
 void move_player(struct paddle *player, int y)
 {
     if (y <= 0)
     {
         player->y = 0;
     }
-    else if (y >= 49)
+    else if (y >= 49) // TODO: Change to 48
     {
         player->y = 48;
     }
@@ -413,30 +468,40 @@ void move_player(struct paddle *player, int y)
     }
 }
 
-void move_computer_insane(struct paddle *computer, int y, int ball_vel)
+/* Moves center of the computer paddle to the y coordinate (+- 3 pixels)
+ * of where the ball will be. If y is out of bounds,
+ * it will be set to the closest possible value
+ */
+void move_ai_middle_hitter(struct paddle *computer, int y, int ball_vel)
 {
+    // TODO: Move AI randomness to a constant
+    // TODO: Make AI beable?
     if (y + ball_vel - computer->height / 2 < 0)
     {
-        computer->y = 0 + rand()%3;
+        computer->y = 0 + rand() % 3;
     }
-    else if (y + ball_vel - computer->height / 2 > 49)
+    else if (y + ball_vel - computer->height / 2 > 49) // TODO: Change to 48
     {
-        computer->y = 49 - rand()%3;
+        computer->y = 49 - rand() % 3;
     }
     else
     {
         computer->y = y + ball_vel - computer->height / 2 + rand() % 5 - 2;
     }
 }
-void move_computer_basic(struct paddle *computer, int y)
+/* Moves computer paddle to the y coordinate (+- 3 pixels)
+ * If y is out of bounds, it will be set to the closest
+ * possible value
+ */
+void move_ai_top_hitter(struct paddle *computer, int y)
 {
     if (y < 0)
     {
-        computer->y = 0 + rand()%3;
+        computer->y = 0 + rand() % 3;
     }
-    else if (y  > 48)
+    else if (y > 48)
     {
-        computer->y = 48 - rand()%3;
+        computer->y = 48 - rand() % 3;
     }
     else
     {
@@ -444,7 +509,11 @@ void move_computer_basic(struct paddle *computer, int y)
     }
 }
 
-void move_computer_adaptive(struct paddle *computer, struct paddle *player, struct ball *ball)
+/* Moves the computer paddle towards the estimated location
+ * of the ball, with some variability and occasional
+ * mistakes to simulate human-like behavior.
+ */
+void move_ai_predictive(struct paddle *computer, struct paddle *player, struct ball *ball)
 {
     int chance_of_mistake = 10; // 10% chance of making a mistake
     int mistake_margin = 5;     // How much the AI paddle will miss by
@@ -507,6 +576,8 @@ void move_computer_adaptive(struct paddle *computer, struct paddle *player, stru
     }
 }
 
+/* Get reading from ADC and return a number between 0 and 63
+ */
 char get_adc_position()
 {
     ADC12CTL0 |= ADC12SC; // Start sampling
@@ -516,9 +587,12 @@ char get_adc_position()
     return adc_position;
 }
 
+/* sets up the game by setting the initial values of the
+ * player, computer, and ball
+ */
 void set_up_game(struct paddle *player, struct paddle *computer, struct ball *ball)
 {
-
+    // TODO: Make all of these constants
     // Generate a random number between 0 and 1
     int random_num = rand() % 2;
     random_num = (random_num == 0) ? 1 : -1;
@@ -542,6 +616,11 @@ void set_up_game(struct paddle *player, struct paddle *computer, struct ball *ba
     ball->y_vel = random_num;
 }
 
+/* Checks if the ball collides with either paddle
+ * If it does, the ball's x velocity is reversed
+ * and the ball's y velocity is set to the difference
+ * between the ball's y coordinate and the center of the paddle
+ */
 void check_collision(struct ball *ball, struct paddle *player, struct paddle *computer)
 {
     struct paddle *paddle;
@@ -564,6 +643,9 @@ void check_collision(struct ball *ball, struct paddle *player, struct paddle *co
     }
 }
 
+/*  Check if ball is out of bounds
+ * If it is, the score is updated and the ball is reset
+ */
 void update_score(struct paddle *player, struct paddle *computer, struct ball *ball)
 {
 
@@ -612,44 +694,49 @@ void update_score(struct paddle *player, struct paddle *computer, struct ball *b
     }
 }
 
+/* Checks if the game is over
+ * If it is, the game over screen is displayed
+ */
 void check_game_over(struct paddle *player, struct paddle *computer, struct ball *ball)
 {
-
+    // TODO: Make this a constant
     if (player->score == 5 || computer->score == 5)
     {
         play_music(3);
 
         char gameover[] = {'G', 'A', 'M', 'E', ' ', 'O', 'V', 'E', 'R'};
         draw_string(15, 2, font_8x8, gameover);
-        
+
         if (player->score == 5)
         {
             char win[] = {'Y', 'O', 'U', ' ', 'W', 'I', 'N'};
             draw_string(20, 4, font_8x8, win);
-
         }
         else
         {
             char lose[] = {'Y', 'O', 'U', ' ', 'L', 'O', 'S', 'E'};
             draw_string(20, 4, font_8x8, lose);
         }
-        wait_for_turn();
+        wait_for_player_input();
         start_animation();
         set_up_game(player, computer, ball);
         init_MPD();
     }
 }
 
-void send_byte(unsigned char word)
+/* Send a byte to the display
+ * This function is used to send characters to the display
+ */
+void send_byte(unsigned char char_to_write)
 {
     int n;
     for (n = 8; n != 0; n--)
     {
-        if (word & 0x80)
+        if (char_to_write & 0x80)
             P3OUT |= MOSI;
         else
             P3OUT &= ~MOSI;
-        word <<= 1;
+        char_to_write <<= 1;
 
         // Pulse clock
         P3OUT &= ~SCK;
@@ -658,10 +745,13 @@ void send_byte(unsigned char word)
         __delay_cycles(1);
     }
 }
-void draw_string(unsigned char column,
-                 unsigned char page,
-                 const unsigned char *font_adress,
-                 const char *str)
+/* Draws a string to the display
+    * This function is used to draw a string to the display
+    * It takes in the column and page to start drawing at
+    * It also takes in the font to use and the string to draw
+
+*/
+void draw_string(unsigned char column, unsigned char page, const unsigned char *font_adress, const char *str)
 {
 
     unsigned int pos_array;                                                // Postion of character data in memory array
@@ -688,9 +778,9 @@ void draw_string(unsigned char column,
         cmd_data[0] = 0xB0 + page;              // set page
         cmd_data[1] = 0x00 + (x & 0x0F);        // LSB of column address
         cmd_data[2] = 0x10 + ((x & 0xF0) >> 4); // MSB of column address
-        spi_IO(cmd_data, 3); // set startpositon and page
-        column_cnt = column;        // store column for display last column check
-        string = str;               // temporary pointer to the beginning of the string to print
+        spi_IO(cmd_data, 3);                    // set startpositon and page
+        column_cnt = column;                    // store column for display last column check
+        string = str;                           // temporary pointer to the beginning of the string to print
 
         P3OUT |= CD;
         P3OUT &= ~CS;
@@ -720,12 +810,14 @@ void draw_string(unsigned char column,
         P3OUT |= CS;
     }
 }
-void wait_for_turn()
+/* Wait for player input with a dead zone*/
+void wait_for_player_input()
 {
+    const int dead_zone = 5;
     char old = get_adc_position();
     char new = get_adc_position();
 
-    while(new + 5 >=  old && new - 5 <= old)
+    while (new + dead_zone >= old &&new - dead_zone <= old)
     {
         new = get_adc_position();
     }
@@ -750,17 +842,17 @@ void main(void)
     set_up_game(&player, &computer, &ball);
 
     int count = 0;
-    char str[] = {'P', 'O', 'N', 'G'};
+    char str[] = {'P', 'O', 'N', 'G'}; // TODO: Add spaces to clear old values
     draw_string(35, 1, font_8x8, str);
-    char firstto5 [] = {'F', 'I', 'R', 'S', 'T', ' ', 'T', 'O', ' ', '5', ' ', ' '};
-    char wins [] = {'W', 'I', 'N', 'S'};
+    char firstto5[] = {'F', 'I', 'R', 'S', 'T', ' ', 'T', 'O', ' ', '5', ' ', ' '};
+    char wins[] = {'W', 'I', 'N', 'S'};
     draw_string(10, 4, font_8x8, firstto5);
     draw_string(35, 5, font_8x8, wins);
 
-    wait_for_turn();
+    wait_for_player_input();
     start_animation();
 
-    while(1)
+    while (1)
     {
         count++;
         set_ball_speed(&ball, count);
@@ -769,10 +861,10 @@ void main(void)
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
         clear_ball(ball.x, ball.y);
         move_player(&player, adc_position);
-//         move_computer_insane(&player, ball.y, ball.y_vel);
-         move_computer_basic(&computer, ball.y);
-//         move_computer_insane(&computer, ball.y, ball.y_vel);
-//        move_computer_adaptive(&computer, &player, &ball);
+        // move_ai_middle_hitter(&player, ball.y, ball.y_vel); // AI (Middle Hitter) controlled PLAYER
+        // move_ai_top_hitter(&computer, ball.y); // AI (Top Hitter) controlled computer
+        // move_ai_middle_hitter(&computer, ball.y, ball.y_vel); // AI (Middle Hitter) controlled computer
+        move_ai_predictive(&computer, &player, &ball); // AI (Predictive) controlled computer
         move_ball(&ball);
         check_collision(&ball, &player, &computer);
         update_score(&player, &computer, &ball);
