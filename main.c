@@ -417,30 +417,30 @@ void move_computer_insane(struct paddle *computer, int y, int ball_vel)
 {
     if (y + ball_vel - computer->height / 2 < 0)
     {
-        computer->y = 0;
+        computer->y = 0 + rand()%3;
     }
     else if (y + ball_vel - computer->height / 2 > 49)
     {
-        computer->y = 49;
+        computer->y = 49 - rand()%3;
     }
     else
     {
-        computer->y = y + ball_vel - computer->height / 2;
+        computer->y = y + ball_vel - computer->height / 2 + rand() % 5 - 2;
     }
 }
 void move_computer_basic(struct paddle *computer, int y)
 {
-    if (y - computer->height / 2 < 0)
+    if (y < 0)
     {
-        computer->y = 0;
+        computer->y = 0 + rand()%3;
     }
-    else if (y - computer->height / 2 > 48)
+    else if (y  > 48)
     {
-        computer->y = 49;
+        computer->y = 48 - rand()%3;
     }
     else
     {
-        computer->y = y;
+        computer->y = y + rand() % 5 - 2;
     }
 }
 
@@ -617,7 +617,23 @@ void check_game_over(struct paddle *player, struct paddle *computer, struct ball
 
     if (player->score == 5 || computer->score == 5)
     {
+        play_music(3);
 
+        char gameover[] = {'G', 'A', 'M', 'E', ' ', 'O', 'V', 'E', 'R'};
+        draw_string(15, 2, font_8x8, gameover);
+        
+        if (player->score == 5)
+        {
+            char win[] = {'Y', 'O', 'U', ' ', 'W', 'I', 'N'};
+            draw_string(20, 4, font_8x8, win);
+
+        }
+        else
+        {
+            char lose[] = {'Y', 'O', 'U', ' ', 'L', 'O', 'S', 'E'};
+            draw_string(20, 4, font_8x8, lose);
+        }
+        wait_for_turn();
         start_animation();
         set_up_game(player, computer, ball);
         init_MPD();
@@ -662,6 +678,7 @@ void draw_string(unsigned char column,
     if (page_height + page > 8) // stay inside display area
         page_height = 8 - page;
 
+    x = column; // store column for display last column check
     // The string is displayed character after character. If the font has more then one page,
     // the top page is printed first, then the next page and so on
     for (y = 0; y < page_height; y++)
@@ -703,6 +720,16 @@ void draw_string(unsigned char column,
         P3OUT |= CS;
     }
 }
+void wait_for_turn()
+{
+    char old = get_adc_position();
+    char new = get_adc_position();
+
+    while(new + 5 >=  old && new - 5 <= old)
+    {
+        new = get_adc_position();
+    }
+}
 
 void main(void)
 {
@@ -724,7 +751,14 @@ void main(void)
 
     int count = 0;
     char str[] = {'P', 'O', 'N', 'G'};
-    draw_string(51, 3, font_8x8, str);
+    draw_string(35, 1, font_8x8, str);
+    char firstto5 [] = {'F', 'I', 'R', 'S', 'T', ' ', 'T', 'O', ' ', '5', ' ', ' '};
+    char wins [] = {'W', 'I', 'N', 'S'};
+    draw_string(10, 4, font_8x8, firstto5);
+    draw_string(35, 5, font_8x8, wins);
+
+    wait_for_turn();
+    start_animation();
 
     while(1)
     {
@@ -735,10 +769,10 @@ void main(void)
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
         clear_ball(ball.x, ball.y);
         move_player(&player, adc_position);
-        // move_computer_insane(&player, ball.y, ball.y_vel);
-        // move_computer_basic(&computer, ball.y);
-        // move_computer_insane(&computer, ball.y, ball.y_vel);
-        move_computer_adaptive(&computer, &player, &ball);
+//         move_computer_insane(&player, ball.y, ball.y_vel);
+         move_computer_basic(&computer, ball.y);
+//         move_computer_insane(&computer, ball.y, ball.y_vel);
+//        move_computer_adaptive(&computer, &player, &ball);
         move_ball(&ball);
         check_collision(&ball, &player, &computer);
         update_score(&player, &computer, &ball);
