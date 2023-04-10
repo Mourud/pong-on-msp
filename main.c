@@ -40,7 +40,6 @@ int ai_select = 0;
 int count = 0;
 int speed_flag = 0;
 
-
 /* Write data to slave device.  Since the LCD panel is
  * write-only, we don't worry about reading any bits.
  * Destroys the data array (normally received data would
@@ -360,7 +359,7 @@ int collides(struct ball *ball, struct paddle *player, struct paddle *computer)
 {
 
     // Computer paddle
-    if (ball->x + ball->size > computer->x && ball->x <= computer->x + computer->width && ball->y >= computer->y && (ball->y) <= computer->y + computer->height)
+    if (ball->x + ball->size > computer->x && ball->x <= computer->x + computer->width && ball->y >= computer->y - ball->size && (ball->y) <= computer->y + computer->height)
     {
         return 1;
     }
@@ -585,11 +584,19 @@ void move_ai_predictive(struct paddle *computer, struct ball *ball)
     int chance_of_mistake = 15; // 10% chance of making a mistake
     int mistake_margin = 5;     // How much the AI paddle will miss by
     int reaction_delay = 3;     // Delay in reacting to the ball's movement
+    int is_ball_coming = 0;
 
     static int delay_counter = 0;
     static int target_y = -1;
-
-    if (ball->x_vel > 0)
+    if (computer->x > 50)
+    {
+        is_ball_coming = ball->x_vel > 0;
+    }
+    else
+    {
+        is_ball_coming = ball->x_vel < 0;
+    }
+    if (is_ball_coming)
     {
         // React to the ball's movement after a certain delay
         if (delay_counter < reaction_delay)
@@ -692,7 +699,6 @@ void check_collision(struct ball *ball, struct paddle *player, struct paddle *co
 {
     struct paddle *paddle;
     int dir = 0;
-    
 
     if (collides(ball, player, computer))
     {
@@ -702,7 +708,6 @@ void check_collision(struct ball *ball, struct paddle *player, struct paddle *co
             ball->x = player->x + player->width + 1;
             paddle = player;
             dir = 1;
-            
         }
         else
         {
@@ -710,10 +715,11 @@ void check_collision(struct ball *ball, struct paddle *player, struct paddle *co
             paddle = computer;
             dir = -1;
         }
-        
+
         ball->x_vel = -ball->x_vel;
         ball->y_vel = ((ball->y) + 2 - (paddle->y + paddle->height / 2)) / 2;
-        if (speed_flag){
+        if (speed_flag)
+        {
             ball->x_vel += dir;
             ball->y_vel += dir;
             speed_flag = 0;
@@ -910,7 +916,7 @@ void wait_for_player_input()
 
 int get_ai()
 {
-    char difficulty[][10]= {"*", "**", "**", "*****"};
+    char difficulty[][10] = {"*", "**", "**", "*****"};
 
     int current_input = get_adc_position() >> 4;
     int old_input = get_adc_position() >> 4;
@@ -923,8 +929,6 @@ int get_ai()
     {
         draw_string(5, j * 2 + 1, font_8x8, ai_names[j]);
         draw_string(61, j * 2 + 1, font_8x8, difficulty[j]);
-
-
     }
     while (i < 10)
     {
@@ -932,12 +936,13 @@ int get_ai()
         current_input = get_adc_position() >> 4;
         if (old_input != current_input)
         {
+            play_music(1);
             clear_rectangle(0, (old_input * 16) + 8, 4, 8);
             draw_rectangle(0, (current_input * 16) + 8, 4, 8);
             old_input = current_input;
             i = 0;
         }
-        __delay_cycles(400000);
+        __delay_cycles(350000);
     }
 
     return old_input;
@@ -968,7 +973,7 @@ void main(void)
     draw_string(10, 3, font_8x8, firstto5);
     draw_string(35, 4, font_8x8, wins);
     draw_string(20, 6, font_8x8, "Twist to");
-    draw_string(35, 7, font_8x8, "START");
+    draw_string(32, 7, font_8x8, "START");
 
     wait_for_player_input();
     start_animation();
@@ -991,7 +996,8 @@ void main(void)
         clear_rectangle(player.x, player.y, player.width, player.height);
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
         clear_ball(ball.x, ball.y);
-        move_player(&player, adc_position);
+        // move_player(&player, adc_position);
+        ai_functions[2](&player, &ball);
         ai_functions[ai_select](&computer, &ball);
         move_ball(&ball);
         check_collision(&ball, &player, &computer);
