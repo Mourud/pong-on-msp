@@ -463,11 +463,6 @@ void move_player(struct paddle *player, int y)
     }
 }
 
-/* Moves center of the computer paddle to the y coordinate (+- 3 pixels)
- * of where the ball will be. If y is out of bounds,
- * it will be set to the closest possible value
- */
-
 void move_ai_raveel(struct paddle *computer, struct ball *ball)
 {
 
@@ -497,6 +492,10 @@ void move_ai_raveel(struct paddle *computer, struct ball *ball)
         computer->y = loc;
     }
 }
+/* Moves center of the computer paddle to the y coordinate (+- 3 pixels)
+ * of where the ball will be. If y is out of bounds,
+ * it will be set to the closest possible value
+ */
 
 void move_ai_middle_hitter(struct paddle *computer, struct ball *ball)
 {
@@ -576,7 +575,7 @@ void move_ai_top_hitter(struct paddle *computer, struct ball *ball)
  * of the ball, with some variability and occasional
  * mistakes to simulate human-like behavior.
  */
-void move_ai_predictive(struct paddle *computer, struct paddle *player, struct ball *ball)
+void move_ai_predictive(struct paddle *computer, struct ball *ball)
 {
     int chance_of_mistake = 10; // 10% chance of making a mistake
     int mistake_margin = 5;     // How much the AI paddle will miss by
@@ -622,7 +621,7 @@ void move_ai_predictive(struct paddle *computer, struct paddle *player, struct b
     }
 
     // Move the paddle smoothly towards the target position
-    int speed_limit = player->height / 2;
+    int speed_limit = computer->height / 2;
     int y_diff = target_y - computer->y;
 
     if (y_diff > speed_limit)
@@ -767,17 +766,17 @@ void check_game_over(struct paddle *player, struct paddle *computer, struct ball
     {
         play_music(3);
 
-        char gameover[] = {'G', 'A', 'M', 'E', ' ', 'O', 'V', 'E', 'R'};
+        char gameover[] = {'G', 'A', 'M', 'E', ' ', 'O', 'V', 'E', 'R', '\0'};
         draw_string(15, 2, font_8x8, gameover);
 
         if (player->score == 5)
         {
-            char win[] = {'Y', 'O', 'U', ' ', 'W', 'I', 'N'};
+            char win[] = {'Y', 'O', 'U', ' ', 'W', 'I', 'N', '\0'};
             draw_string(20, 4, font_8x8, win);
         }
         else
         {
-            char lose[] = {'Y', 'O', 'U', ' ', 'L', 'O', 'S', 'E'};
+            char lose[] = {'Y', 'O', 'U', ' ', 'L', 'O', 'S', 'E', '\0'};
             draw_string(20, 4, font_8x8, lose);
         }
         wait_for_player_input();
@@ -815,7 +814,6 @@ void send_byte(unsigned char char_to_write)
 
 */
 
-// TODO: See if you can make this not show extra chars
 void draw_string(unsigned char column, unsigned char page, const unsigned char *font_adress, const char *str)
 {
 
@@ -888,6 +886,44 @@ void wait_for_player_input()
     }
 }
 
+int get_ai()
+{
+    char str[][8] = {
+        {'R', 'a', 'v', 'e', 'e', 'l', '\0', ' '}, // Raveel // Raveel's AI Half
+        {'D', 'u', 'b', 'n', 'e', 'l', '\0', ' '}, // Dubnel // Top hitter
+        {'M', 'r', '.', 'F', 'r', 'o', 'g', '\0'}, // Mr. Frog // Predictive
+        {'A', 'n', 'd', 'r', 'z', 'e', 'j', '\0'}, // Andrzej // Middle hitter
+
+    };
+    int current_input = get_adc_position() >> 4;
+    int old_input = get_adc_position() >> 4;
+    draw_rectangle(0, (current_input * 16) + 8, 10, 8);
+    int i = 0;
+    int j;
+    char desc[] = "*Select Rival*";
+    draw_string(0, 0, font_8x8, desc);
+    for (j = 0; j < 4; j++)
+    {
+        draw_string(10, j * 2 + 1, font_8x8, str[j]);
+    }
+    while (i < 10)
+    {
+        i++;
+        current_input = get_adc_position() >> 4;
+        if (old_input != current_input)
+        {
+            clear_rectangle(0, (old_input * 16) + 8, 10, 8);
+            draw_rectangle(0, (current_input * 16) + 8, 10, 8);
+            draw_string(10, current_input * 2 + 1, font_8x8, str[current_input]);
+            old_input = current_input;
+            i = 0;
+        }
+        __delay_cycles(200000);
+    }
+
+    return old_input;
+}
+
 void main(void)
 {
     // Stop the watchdog timer so it doesn't reset our chip
@@ -907,14 +943,24 @@ void main(void)
     set_up_game(&player, &computer, &ball);
 
     int count = 0;
-    char str[] = {'P', 'O', 'N', 'G', ' '};
+    char str[] = {'P', 'O', 'N', 'G', '\0'};
     draw_string(35, 1, font_8x8, str);
-    char firstto5[] = {'F', 'I', 'R', 'S', 'T', ' ', 'T', 'O', ' ', '5', ' ', ' '};
-    char wins[] = {'W', 'I', 'N', 'S', ' '};
+    char firstto5[] = {'F', 'I', 'R', 'S', 'T', ' ', 'T', 'O', ' ', '5', '\0'};
+    char wins[] = {'W', 'I', 'N', 'S', '\0'};
     draw_string(10, 4, font_8x8, firstto5);
     draw_string(35, 5, font_8x8, wins);
 
     wait_for_player_input();
+    start_animation();
+
+    void (*ai_functions[4])(struct paddle *, struct ball *) = {
+        move_ai_raveel,
+        move_ai_top_hitter,
+        move_ai_predictive,
+        move_ai_middle_hitter,
+    };
+
+    int ai_select = get_ai();
     start_animation();
 
     while (1)
@@ -925,13 +971,8 @@ void main(void)
         clear_rectangle(player.x, player.y, player.width, player.height);
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
         clear_ball(ball.x, ball.y);
-        // move_player(&player, adc_position);
-        move_ai_top_hitter(&player, &ball); // AI (Top Hitter) controlled PLAYER
-                                            //        move_ai_middle_hitter(&player, &ball); // AI (Middle Hitter) controlled PLAYER
-        // move_ai_top_hitter(&computer, ball.y); // AI (Top Hitter) controlled computer
-        // move_ai_middle_hitter(&computer, &ball); // AI (Middle Hitter) controlled computer
-        // move_ai_predictive(&computer, &player, &ball); // AI (Predictive) controlled computer
-        move_ai_raveel(&computer, &ball); // AI (Raveel) controlled computer
+        move_player(&player, adc_position);
+        ai_functions[ai_select](&computer, &ball);
         move_ball(&ball);
         check_collision(&ball, &player, &computer);
         update_score(&player, &computer, &ball);
