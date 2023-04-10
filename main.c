@@ -37,6 +37,9 @@ const char ai_names[][8] = {
 };
 
 int ai_select = 0;
+int count = 0;
+int speed_flag = 0;
+
 
 /* Write data to slave device.  Since the LCD panel is
  * write-only, we don't worry about reading any bits.
@@ -372,20 +375,12 @@ int collides(struct ball *ball, struct paddle *player, struct paddle *computer)
 /* Inceases the speed of the ball by 1 pixel
  * every 100 frames
  */
-// TODO: Increase y_vel as well
-void set_ball_speed(struct ball *ball, int count)
+void set_ball_speed(struct ball *ball)
 {
-    if (count % 100 == 0 && ball->x_vel < 5 && ball->x_vel > -5)
+    if (count > 100 && ball->x_vel < 5 && ball->x_vel > -5)
     {
         count = 0;
-        if (ball->x_vel > 0)
-        {
-            ball->x_vel++;
-        }
-        else
-        {
-            ball->x_vel--;
-        }
+        speed_flag = 1;
     }
 }
 
@@ -696,6 +691,8 @@ void set_up_game(struct paddle *player, struct paddle *computer, struct ball *ba
 void check_collision(struct ball *ball, struct paddle *player, struct paddle *computer)
 {
     struct paddle *paddle;
+    int dir = 0;
+    
 
     if (collides(ball, player, computer))
     {
@@ -704,14 +701,23 @@ void check_collision(struct ball *ball, struct paddle *player, struct paddle *co
         {
             ball->x = player->x + player->width + 1;
             paddle = player;
+            dir = 1;
+            
         }
         else
         {
             ball->x = computer->x - ball->size - 1;
             paddle = computer;
+            dir = -1;
         }
+        
         ball->x_vel = -ball->x_vel;
         ball->y_vel = ((ball->y) + 2 - (paddle->y + paddle->height / 2)) / 2;
+        if (speed_flag){
+            ball->x_vel += dir;
+            ball->y_vel += dir;
+            speed_flag = 0;
+        }
     }
 }
 
@@ -952,7 +958,6 @@ void main(void)
     struct ball ball;
     set_up_game(&player, &computer, &ball);
 
-    int count = 0;
     char str[] = "PONG";
     draw_string(35, 1, font_8x8, str);
     char firstto5[] = "FIRST TO 5";
@@ -976,7 +981,7 @@ void main(void)
     while (1)
     {
         count++;
-        set_ball_speed(&ball, count);
+        set_ball_speed(&ball);
         char adc_position = get_adc_position();
         clear_rectangle(player.x, player.y, player.width, player.height);
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
