@@ -497,40 +497,29 @@ void move_ai_middle_hitter(struct paddle *computer, struct ball *ball)
  * If y is out of bounds, it will be set to the closest
  * possible value
  */
-void move_ai_top_hitter(struct paddle *computer, int y)
+void move_ai_top_hitter(struct paddle *computer, struct ball *ball)
 {
-    // const int random_movement = 3;
-    // int loc = computer->y = y + rand() % 5 - 2;
-    // //    if (ball->x_vel > 0)
-    // {
-    //     //        if (ball->x < 50)
-    //     {
-    //         //            loc = ball->y ;
-    //     }
-    //     if (loc < 0)
-    //     {
-    //         computer->y = 0 + rand() % 3;
-    //     }
-    //     else if (loc > 47)
-    //     {
-    //         computer->y = 47 - rand() % 3;
-    //     }
-    //     else
-    //     {
-    //         computer->y = loc;
-    //     }
-    // }
-    if (y < 0)
+    const int random_movement = rand() % 5;
+    int loc = ball->y + 4 + random_movement - 4;
+    if (ball->x_vel < 0)
     {
-        computer->y = 0 + rand() % 3;
-    }
-    else if (y > 48)
-    {
-        computer->y = 48 - rand() % 3;
-    }
-    else
-    {
-        computer->y = y + rand() % 5 - 2;
+        if (loc < 0)
+        {
+            loc = 0 + random_movement;
+        }
+        else if (loc > 47)
+        {
+            loc = 47 - random_movement;
+        }
+        if ((computer->y - loc) > computer->height / 2)
+        {
+            loc = computer->y - computer->height / 2;
+        }
+        else if ((loc - computer->y) > computer->height / 2)
+        {
+            loc = computer->y + computer->height / 2;
+        }
+        computer->y = loc;
     }
 }
 
@@ -622,14 +611,14 @@ void set_up_game(struct paddle *player, struct paddle *computer, struct ball *ba
     int random_num = rand() % 2;
     random_num = (random_num == 0) ? 1 : -1;
     player->x = 10;
-    player->y = 49;
+    player->y = 28;
     player->width = 7;
     player->height = 16;
     player->score = 0;
     player->y_vel = 0;
 
     computer->x = 85;
-    computer->y = 49;
+    computer->y = 28;
     computer->width = 7;
     computer->height = 16;
     computer->score = 0;
@@ -888,7 +877,7 @@ void main(void)
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
         clear_ball(ball.x, ball.y);
         // move_player(&player, adc_position);
-        move_ai_top_hitter(&player, ball.y); // AI (Top Hitter) controlled PLAYER
+        move_ai_top_hitter(&player, &ball); // AI (Top Hitter) controlled PLAYER
                                              //        move_ai_middle_hitter(&player, &ball); // AI (Middle Hitter) controlled PLAYER
         // move_ai_top_hitter(&computer, ball.y); // AI (Top Hitter) controlled computer
         move_ai_middle_hitter(&computer, &ball); // AI (Middle Hitter) controlled computer
