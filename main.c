@@ -347,18 +347,12 @@ int collides(struct ball *ball, struct paddle *player, struct paddle *computer)
 {
 
     // Computer paddle
-    if (ball->x + ball->size > computer->x 
-    && ball->x <= computer->x + computer->width 
-    && ball->y >= computer->y  
-    && (ball->y) <= computer->y + computer->height )
+    if (ball->x + ball->size > computer->x && ball->x <= computer->x + computer->width && ball->y >= computer->y && (ball->y) <= computer->y + computer->height)
     {
         return 1;
     }
     // Player paddle
-    if (ball->x < player->x + player->width 
-    && ball->x >= player->x 
-    && ball->y >= player->y  - ball->size 
-    && (ball->y) <= player->y + player->height )
+    if (ball->x < player->x + player->width && ball->x >= player->x && ball->y >= player->y - ball->size && (ball->y) <= player->y + player->height)
     {
         return 1;
     }
@@ -475,22 +469,28 @@ void move_player(struct paddle *player, int y)
  */
 void move_ai_middle_hitter(struct paddle *computer, struct ball *ball)
 {
-    const int random_movement = 3 + computer->height / 2;
-    const int loc = ball->y - computer->height / 2 + random_movement - computer->height / 2;
-    if (ball->x_vel > 0 )
+    const int random_movement = rand() % (computer->height / 2 + 3);
+    int loc = ball->y + 2 - computer->height / 2 + random_movement;
+
+    if (ball->x_vel > 0)
     {
         if (loc < 0)
         {
-            computer->y = 0 + random_movement;
+            loc = 0 + random_movement;
         }
         else if (loc > 47)
         {
-            computer->y = 47 - random_movement;
+            loc = 47 - random_movement;
         }
-        else
+        if ((computer->y - loc) > computer->height / 2)
         {
-            computer->y = loc;
+            loc = computer->y - computer->height / 2;
         }
+        else if ((loc - computer->y) > computer->height / 2)
+        {
+            loc = computer->y + computer->height / 2;
+        }
+        computer->y = loc;
     }
 }
 /* Moves computer paddle to the y coordinate (+- 3 pixels)
@@ -499,6 +499,27 @@ void move_ai_middle_hitter(struct paddle *computer, struct ball *ball)
  */
 void move_ai_top_hitter(struct paddle *computer, int y)
 {
+    // const int random_movement = 3;
+    // int loc = computer->y = y + rand() % 5 - 2;
+    // //    if (ball->x_vel > 0)
+    // {
+    //     //        if (ball->x < 50)
+    //     {
+    //         //            loc = ball->y ;
+    //     }
+    //     if (loc < 0)
+    //     {
+    //         computer->y = 0 + rand() % 3;
+    //     }
+    //     else if (loc > 47)
+    //     {
+    //         computer->y = 47 - rand() % 3;
+    //     }
+    //     else
+    //     {
+    //         computer->y = loc;
+    //     }
+    // }
     if (y < 0)
     {
         computer->y = 0 + rand() % 3;
@@ -643,7 +664,7 @@ void check_collision(struct ball *ball, struct paddle *player, struct paddle *co
             paddle = computer;
         }
         ball->x_vel = -ball->x_vel;
-        ball->y_vel = ((ball->y) + 2 - (paddle->y + paddle->height / 2))/2;
+        ball->y_vel = ((ball->y) + 2 - (paddle->y + paddle->height / 2)) / 2;
     }
 }
 
@@ -755,6 +776,8 @@ void send_byte(unsigned char char_to_write)
     * It also takes in the font to use and the string to draw
 
 */
+
+// TODO: See if you can make this not show extra chars
 void draw_string(unsigned char column, unsigned char page, const unsigned char *font_adress, const char *str)
 {
 
@@ -846,16 +869,15 @@ void main(void)
     set_up_game(&player, &computer, &ball);
 
     int count = 0;
-    char str[] = {'P', 'O', 'N', 'G'}; // TODO: Add spaces to clear old values
+    char str[] = {'P', 'O', 'N', 'G', ' '};
     draw_string(35, 1, font_8x8, str);
     char firstto5[] = {'F', 'I', 'R', 'S', 'T', ' ', 'T', 'O', ' ', '5', ' ', ' '};
-    char wins[] = {'W', 'I', 'N', 'S'};
+    char wins[] = {'W', 'I', 'N', 'S', ' '};
     draw_string(10, 4, font_8x8, firstto5);
     draw_string(35, 5, font_8x8, wins);
 
     wait_for_player_input();
     start_animation();
-
 
     while (1)
     {
@@ -865,8 +887,9 @@ void main(void)
         clear_rectangle(player.x, player.y, player.width, player.height);
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
         clear_ball(ball.x, ball.y);
-        move_player(&player, adc_position);
-        // move_ai_middle_hitter(&player, ball.y, ball.y_vel); // AI (Middle Hitter) controlled PLAYER
+        // move_player(&player, adc_position);
+        move_ai_top_hitter(&player, ball.y); // AI (Top Hitter) controlled PLAYER
+                                             //        move_ai_middle_hitter(&player, &ball); // AI (Middle Hitter) controlled PLAYER
         // move_ai_top_hitter(&computer, ball.y); // AI (Top Hitter) controlled computer
         move_ai_middle_hitter(&computer, &ball); // AI (Middle Hitter) controlled computer
         // move_ai_predictive(&computer, &player, &ball); // AI (Predictive) controlled computer
