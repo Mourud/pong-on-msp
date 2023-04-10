@@ -39,6 +39,7 @@ const char ai_names[][8] = {
 int ai_select = 0;
 int count = 0;
 int speed_flag = 0;
+int game_point_flag = 0;
 
 /* Write data to slave device.  Since the LCD panel is
  * write-only, we don't worry about reading any bits.
@@ -669,6 +670,9 @@ void set_up_game(struct paddle *player, struct paddle *computer, struct ball *ba
     // TODO: Make all of these constants
     // Generate a random number between 0 and 1
     int random_num = rand() % 2;
+    count = 0;
+    speed_flag = 0;
+    game_point_flag = 0;
     random_num = (random_num == 0) ? 1 : -1;
     player->x = 10;
     player->y = 28;
@@ -783,11 +787,30 @@ void update_score(struct paddle *player, struct paddle *computer, struct ball *b
  */
 void check_game_over(struct paddle *player, struct paddle *computer, struct ball *ball)
 {
-    // TODO: Make this a constant
+
+    if (player->score == 4 || computer->score == 4)
+    {
+        if (game_point_flag == 0)
+        {
+            play_music(2);
+            game_point_flag = 1;
+        }
+
+        if (player->score == 4)
+        {
+            draw_string(18, 0, font_8x8, "G");
+        }
+        else
+        {
+            draw_string(77, 0, font_8x8, "G");
+        }
+    }
+
     if (player->score == 5 || computer->score == 5)
     {
         play_music(3);
-
+        draw_string(15, 0, font_8x8, " ");
+        draw_string(77, 0, font_8x8, " ");
         char gameover[] = "GAME OVER";
         draw_string(15, 2, font_8x8, gameover);
 
@@ -1020,7 +1043,9 @@ void main(void)
     {
         player_select = get_player();
         start_animation();
-    }else{
+    }
+    else
+    {
         player_select = -1;
     }
 
@@ -1042,11 +1067,12 @@ void main(void)
         clear_rectangle(player.x, player.y, player.width, player.height);
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
         clear_ball(ball.x, ball.y);
-        if (player_select != -1)
+        if (player_select == -1)
         {
-            ai_functions[player_select](&player, &ball);   
+            move_player(&player, adc_position);
+        } else{
+            ai_functions[player_select](&player, &ball);
         }
-        move_player(&player, adc_position);
         ai_functions[ai_select](&computer, &ball);
         move_ball(&ball);
         check_collision(&ball, &player, &computer);
