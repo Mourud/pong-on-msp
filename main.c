@@ -181,15 +181,11 @@ void draw_ball(int x, int y)
             // Calculate the byte to draw based on the current page and y coordinate
             if (page == page_start)
             {
-                data[i] |= 0xFF << (y % 8);
+                data[i] |= 0x0F << (y % 8);
             }
             else if (page == page_end)
             {
-                data[i] = 0xFF >> (8 - (y + ball_size) % 8);
-            }
-            else
-            {
-                data[i] = 0xFF;
+                data[i] = 0xF0 >> (8 - (y + ball_size) % 8);
             }
         }
 
@@ -851,6 +847,16 @@ void main(void)
 
     wait_for_player_input();
     start_animation();
+
+//    while (1)
+//    {
+//        clear_ball(ball.x, count);
+//        count++;
+//        draw_ball(ball.x, count);
+//        __delay_cycles(100000);
+//
+//    }
+    
 
     while (1)
     {
