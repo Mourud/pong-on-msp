@@ -467,12 +467,23 @@ void move_player(struct paddle *player, int y)
  * of where the ball will be. If y is out of bounds,
  * it will be set to the closest possible value
  */
+
+
 void move_ai_middle_hitter(struct paddle *computer, struct ball *ball)
 {
     const int random_movement = rand() % (computer->height / 2 + 3);
     int loc = ball->y + 2 - computer->height / 2 + random_movement;
-
-    if (ball->x_vel > 0)
+    // check if paddle is computer or player
+    int is_ball_coming = 0;
+    if (computer->x > 50)
+    {
+        is_ball_coming = ball->x_vel > 0;
+    }
+    else
+    {
+        is_ball_coming = ball->x_vel < 0;
+    }
+    if (is_ball_coming)
     {
         if (loc < 0)
         {
@@ -501,7 +512,16 @@ void move_ai_top_hitter(struct paddle *computer, struct ball *ball)
 {
     const int random_movement = rand() % 5;
     int loc = ball->y + 4 + random_movement - 4;
-    if (ball->x_vel < 0)
+    int is_ball_coming = 0;
+    if (computer->x > 50)
+    {
+        is_ball_coming = ball->x_vel > 0;
+    }
+    else
+    {
+        is_ball_coming = ball->x_vel < 0;
+    }
+    if (is_ball_coming)
     {
         if (loc < 0)
         {
@@ -878,7 +898,7 @@ void main(void)
         clear_ball(ball.x, ball.y);
         // move_player(&player, adc_position);
         move_ai_top_hitter(&player, &ball); // AI (Top Hitter) controlled PLAYER
-                                             //        move_ai_middle_hitter(&player, &ball); // AI (Middle Hitter) controlled PLAYER
+                                            //        move_ai_middle_hitter(&player, &ball); // AI (Middle Hitter) controlled PLAYER
         // move_ai_top_hitter(&computer, ball.y); // AI (Top Hitter) controlled computer
         move_ai_middle_hitter(&computer, &ball); // AI (Middle Hitter) controlled computer
         // move_ai_predictive(&computer, &player, &ball); // AI (Predictive) controlled computer
