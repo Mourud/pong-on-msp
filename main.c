@@ -345,15 +345,20 @@ void move_ball(struct ball *ball)
  */
 int collides(struct ball *ball, struct paddle *player, struct paddle *computer)
 {
-    int BUFFER = 2;
 
     // Computer paddle
-    if (ball->x + ball->size > computer->x && ball->x <= computer->x + computer->width && ball->y >= computer->y - BUFFER && (ball->y + ball->size) <= computer->y + computer->height + BUFFER)
+    if (ball->x + ball->size > computer->x 
+    && ball->x <= computer->x + computer->width 
+    && ball->y >= computer->y  
+    && (ball->y) <= computer->y + computer->height )
     {
         return 1;
     }
     // Player paddle
-    if (ball->x < player->x + player->width && ball->x >= player->x && ball->y >= player->y - BUFFER - ball->size && (ball->y + ball->size) <= player->y + player->height + BUFFER)
+    if (ball->x < player->x + player->width 
+    && ball->x >= player->x 
+    && ball->y >= player->y  - ball->size 
+    && (ball->y) <= player->y + player->height )
     {
         return 1;
     }
@@ -454,9 +459,9 @@ void move_player(struct paddle *player, int y)
     {
         player->y = 0;
     }
-    else if (y >= 49) // TODO: Change to 48
+    else if (y > 47)
     {
-        player->y = 48;
+        player->y = 47;
     }
     else
     {
@@ -468,21 +473,24 @@ void move_player(struct paddle *player, int y)
  * of where the ball will be. If y is out of bounds,
  * it will be set to the closest possible value
  */
-void move_ai_middle_hitter(struct paddle *computer, int y, int ball_vel)
+void move_ai_middle_hitter(struct paddle *computer, struct ball *ball)
 {
-    // TODO: Move AI randomness to a constant
-    // TODO: Make AI beable?
-    if (y + ball_vel - computer->height / 2 < 0)
+    const int random_movement = 3 + computer->height / 2;
+    const int loc = ball->y - computer->height / 2 + random_movement - computer->height / 2;
+    if (ball->x_vel > 0 )
     {
-        computer->y = 0 + rand() % 3;
-    }
-    else if (y + ball_vel - computer->height / 2 > 49) // TODO: Change to 48
-    {
-        computer->y = 49 - rand() % 3;
-    }
-    else
-    {
-        computer->y = y + ball_vel - computer->height / 2 + rand() % 5 - 2;
+        if (loc < 0)
+        {
+            computer->y = 0 + random_movement;
+        }
+        else if (loc > 47)
+        {
+            computer->y = 47 - random_movement;
+        }
+        else
+        {
+            computer->y = loc;
+        }
     }
 }
 /* Moves computer paddle to the y coordinate (+- 3 pixels)
@@ -595,14 +603,14 @@ void set_up_game(struct paddle *player, struct paddle *computer, struct ball *ba
     player->x = 10;
     player->y = 49;
     player->width = 7;
-    player->height = 15;
+    player->height = 16;
     player->score = 0;
     player->y_vel = 0;
 
     computer->x = 85;
     computer->y = 49;
     computer->width = 7;
-    computer->height = 15;
+    computer->height = 16;
     computer->score = 0;
 
     ball->x = 47;
@@ -635,7 +643,7 @@ void check_collision(struct ball *ball, struct paddle *player, struct paddle *co
             paddle = computer;
         }
         ball->x_vel = -ball->x_vel;
-        ball->y_vel = ((ball->y) - (paddle->y + paddle->height / 2)) / 2;
+        ball->y_vel = ((ball->y) + 2 - (paddle->y + paddle->height / 2))/2;
     }
 }
 
@@ -848,15 +856,6 @@ void main(void)
     wait_for_player_input();
     start_animation();
 
-//    while (1)
-//    {
-//        clear_ball(ball.x, count);
-//        count++;
-//        draw_ball(ball.x, count);
-//        __delay_cycles(100000);
-//
-//    }
-    
 
     while (1)
     {
@@ -869,8 +868,8 @@ void main(void)
         move_player(&player, adc_position);
         // move_ai_middle_hitter(&player, ball.y, ball.y_vel); // AI (Middle Hitter) controlled PLAYER
         // move_ai_top_hitter(&computer, ball.y); // AI (Top Hitter) controlled computer
-        // move_ai_middle_hitter(&computer, ball.y, ball.y_vel); // AI (Middle Hitter) controlled computer
-        move_ai_predictive(&computer, &player, &ball); // AI (Predictive) controlled computer
+        move_ai_middle_hitter(&computer, &ball); // AI (Middle Hitter) controlled computer
+        // move_ai_predictive(&computer, &player, &ball); // AI (Predictive) controlled computer
         move_ball(&ball);
         check_collision(&ball, &player, &computer);
         update_score(&player, &computer, &ball);
