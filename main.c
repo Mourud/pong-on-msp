@@ -28,6 +28,16 @@ struct paddle
     int score;
 };
 
+const char ai_names[][8] = {
+    "Raveel",                                  // Raveel // Raveel's AI Half
+    "Dubnel",                                  // Dubnel // Top hitter
+    {'M', 'r', '.', 'F', 'r', 'o', 'g', '\0'}, // Mr. Frog // Predictive
+    "Andrzej",                                 // Andrzej // Middle hitter
+
+};
+
+int ai_select = 0;
+
 /* Write data to slave device.  Since the LCD panel is
  * write-only, we don't worry about reading any bits.
  * Destroys the data array (normally received data would
@@ -766,23 +776,29 @@ void check_game_over(struct paddle *player, struct paddle *computer, struct ball
     {
         play_music(3);
 
-        char gameover[] = {'G', 'A', 'M', 'E', ' ', 'O', 'V', 'E', 'R', '\0'};
+        char gameover[] = "GAME OVER";
         draw_string(15, 2, font_8x8, gameover);
 
         if (player->score == 5)
         {
-            char win[] = {'Y', 'O', 'U', ' ', 'W', 'I', 'N', '\0'};
+            char win[] = "YOU WIN!";
             draw_string(20, 4, font_8x8, win);
         }
         else
         {
-            char lose[] = {'Y', 'O', 'U', ' ', 'L', 'O', 'S', 'E', '\0'};
-            draw_string(20, 4, font_8x8, lose);
+            char lose[] = ":(";
+            draw_string(40, 4, font_8x8, lose);
+            draw_string(0, 6, font_8x8, ai_names[ai_select]);
+            draw_string(62, 6, font_8x8, "WINS!");
         }
+        __delay_cycles(1000000);
         wait_for_player_input();
         start_animation();
+
         set_up_game(player, computer, ball);
         init_MPD();
+        ai_select = get_ai();
+        start_animation();
     }
 }
 
@@ -888,23 +904,17 @@ void wait_for_player_input()
 
 int get_ai()
 {
-    char str[][8] = {
-        {'R', 'a', 'v', 'e', 'e', 'l', '\0', ' '}, // Raveel // Raveel's AI Half
-        {'D', 'u', 'b', 'n', 'e', 'l', '\0', ' '}, // Dubnel // Top hitter
-        {'M', 'r', '.', 'F', 'r', 'o', 'g', '\0'}, // Mr. Frog // Predictive
-        {'A', 'n', 'd', 'r', 'z', 'e', 'j', '\0'}, // Andrzej // Middle hitter
 
-    };
     int current_input = get_adc_position() >> 4;
     int old_input = get_adc_position() >> 4;
     draw_rectangle(0, (current_input * 16) + 8, 10, 8);
     int i = 0;
     int j;
-    char desc[] = "*Select Rival*";
+    char desc[] = "#Select Rival";
     draw_string(0, 0, font_8x8, desc);
     for (j = 0; j < 4; j++)
     {
-        draw_string(10, j * 2 + 1, font_8x8, str[j]);
+        draw_string(10, j * 2 + 1, font_8x8, ai_names[j]);
     }
     while (i < 10)
     {
@@ -914,7 +924,7 @@ int get_ai()
         {
             clear_rectangle(0, (old_input * 16) + 8, 10, 8);
             draw_rectangle(0, (current_input * 16) + 8, 10, 8);
-            draw_string(10, current_input * 2 + 1, font_8x8, str[current_input]);
+            draw_string(10, current_input * 2 + 1, font_8x8, ai_names[current_input]);
             old_input = current_input;
             i = 0;
         }
@@ -943,10 +953,10 @@ void main(void)
     set_up_game(&player, &computer, &ball);
 
     int count = 0;
-    char str[] = {'P', 'O', 'N', 'G', '\0'};
+    char str[] = "PONG";
     draw_string(35, 1, font_8x8, str);
-    char firstto5[] = {'F', 'I', 'R', 'S', 'T', ' ', 'T', 'O', ' ', '5', '\0'};
-    char wins[] = {'W', 'I', 'N', 'S', '\0'};
+    char firstto5[] = "FIRST TO 5";
+    char wins[] = "WINS!";
     draw_string(10, 4, font_8x8, firstto5);
     draw_string(35, 5, font_8x8, wins);
 
@@ -960,7 +970,7 @@ void main(void)
         move_ai_middle_hitter,
     };
 
-    int ai_select = get_ai();
+    ai_select = get_ai();
     start_animation();
 
     while (1)
