@@ -468,6 +468,35 @@ void move_player(struct paddle *player, int y)
  * it will be set to the closest possible value
  */
 
+void move_ai_raveel(struct paddle *computer, struct ball *ball)
+{
+
+    int is_ball_coming = 0;
+    int center_of_ball = ball->y + 2;
+    int center_of_paddle = computer->y + computer->height / 2;
+    int loc = (center_of_ball - center_of_paddle) / 2 + computer->y;
+    if (computer->x > 50)
+    {
+        is_ball_coming = ball->x_vel > 0;
+    }
+    else
+    {
+        is_ball_coming = ball->x_vel < 0;
+    }
+    if (is_ball_coming)
+    {
+
+        if (loc < 0)
+        {
+            loc = 0;
+        }
+        else if (loc > 47)
+        {
+            loc = 47;
+        }
+        computer->y = loc;
+    }
+}
 
 void move_ai_middle_hitter(struct paddle *computer, struct ball *ball)
 {
@@ -900,8 +929,9 @@ void main(void)
         move_ai_top_hitter(&player, &ball); // AI (Top Hitter) controlled PLAYER
                                             //        move_ai_middle_hitter(&player, &ball); // AI (Middle Hitter) controlled PLAYER
         // move_ai_top_hitter(&computer, ball.y); // AI (Top Hitter) controlled computer
-        move_ai_middle_hitter(&computer, &ball); // AI (Middle Hitter) controlled computer
+        // move_ai_middle_hitter(&computer, &ball); // AI (Middle Hitter) controlled computer
         // move_ai_predictive(&computer, &player, &ball); // AI (Predictive) controlled computer
+        move_ai_raveel(&computer, &ball); // AI (Raveel) controlled computer
         move_ball(&ball);
         check_collision(&ball, &player, &computer);
         update_score(&player, &computer, &ball);
