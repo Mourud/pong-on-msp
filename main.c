@@ -29,9 +29,9 @@ struct paddle
 };
 
 const char ai_names[][8] = {
+    {'M', 'r', '.', 'F', 'r', 'o', 'g', '\0'}, // Mr. Frog // Predictive
     "Raveel",                                  // Raveel // Raveel's AI Half
     "Dubnel",                                  // Dubnel // Top hitter
-    {'M', 'r', '.', 'F', 'r', 'o', 'g', '\0'}, // Mr. Frog // Predictive
     "Andrzej",                                 // Andrzej // Middle hitter
 
 };
@@ -504,7 +504,7 @@ void move_ai_raveel(struct paddle *computer, struct ball *ball)
 
 void move_ai_middle_hitter(struct paddle *computer, struct ball *ball)
 {
-    const int random_movement = rand() % (computer->height / 2 + 3);
+    const int random_movement = rand() % (computer->height / 2 + 2);
     int loc = ball->y + 2 - computer->height / 2 + random_movement;
     // check if paddle is computer or player
     int is_ball_coming = 0;
@@ -582,7 +582,7 @@ void move_ai_top_hitter(struct paddle *computer, struct ball *ball)
  */
 void move_ai_predictive(struct paddle *computer, struct ball *ball)
 {
-    int chance_of_mistake = 10; // 10% chance of making a mistake
+    int chance_of_mistake = 15; // 10% chance of making a mistake
     int mistake_margin = 5;     // How much the AI paddle will miss by
     int reaction_delay = 3;     // Delay in reacting to the ball's movement
 
@@ -910,17 +910,21 @@ void wait_for_player_input()
 
 int get_ai()
 {
+    char difficulty[][10]= {"*", "**", "**", "*****"};
 
     int current_input = get_adc_position() >> 4;
     int old_input = get_adc_position() >> 4;
-    draw_rectangle(0, (current_input * 16) + 8, 10, 8);
+    draw_rectangle(0, (current_input * 16) + 8, 4, 8);
     int i = 0;
     int j;
     char desc[] = "#Select Rival";
     draw_string(0, 0, font_8x8, desc);
     for (j = 0; j < 4; j++)
     {
-        draw_string(10, j * 2 + 1, font_8x8, ai_names[j]);
+        draw_string(5, j * 2 + 1, font_8x8, ai_names[j]);
+        draw_string(61, j * 2 + 1, font_8x8, difficulty[j]);
+
+
     }
     while (i < 10)
     {
@@ -928,13 +932,12 @@ int get_ai()
         current_input = get_adc_position() >> 4;
         if (old_input != current_input)
         {
-            clear_rectangle(0, (old_input * 16) + 8, 10, 8);
-            draw_rectangle(0, (current_input * 16) + 8, 10, 8);
-            draw_string(10, current_input * 2 + 1, font_8x8, ai_names[current_input]);
+            clear_rectangle(0, (old_input * 16) + 8, 4, 8);
+            draw_rectangle(0, (current_input * 16) + 8, 4, 8);
             old_input = current_input;
             i = 0;
         }
-        __delay_cycles(200000);
+        __delay_cycles(400000);
     }
 
     return old_input;
@@ -962,16 +965,18 @@ void main(void)
     draw_string(35, 1, font_8x8, str);
     char firstto5[] = "FIRST TO 5";
     char wins[] = "WINS!";
-    draw_string(10, 4, font_8x8, firstto5);
-    draw_string(35, 5, font_8x8, wins);
+    draw_string(10, 3, font_8x8, firstto5);
+    draw_string(35, 4, font_8x8, wins);
+    draw_string(20, 6, font_8x8, "Twist to");
+    draw_string(35, 7, font_8x8, "START");
 
     wait_for_player_input();
     start_animation();
 
     void (*ai_functions[4])(struct paddle *, struct ball *) = {
+        move_ai_predictive,
         move_ai_raveel,
         move_ai_top_hitter,
-        move_ai_predictive,
         move_ai_middle_hitter,
     };
 
