@@ -474,7 +474,8 @@ void move_ai_raveel(struct paddle *computer, struct ball *ball)
     int is_ball_coming = 0;
     int center_of_ball = ball->y + 2;
     int center_of_paddle = computer->y + computer->height / 2;
-    int loc = (center_of_ball - center_of_paddle) / 2 + computer->y;
+    int random = rand() % 5;
+    int loc = (center_of_ball - center_of_paddle) / 2 + computer->y + random - 2;
     if (computer->x > 50)
     {
         is_ball_coming = ball->x_vel > 0;
@@ -488,11 +489,11 @@ void move_ai_raveel(struct paddle *computer, struct ball *ball)
 
         if (loc < 0)
         {
-            loc = 0;
+            loc = 0 + random;
         }
         else if (loc > 47)
         {
-            loc = 47;
+            loc = 47 - random;
         }
         computer->y = loc;
     }
@@ -541,7 +542,7 @@ void move_ai_middle_hitter(struct paddle *computer, struct ball *ball)
  * If y is out of bounds, it will be set to the closest
  * possible value
  */
-void move_ai_top_hitter(struct paddle *computer, struct ball *ball)
+void move_ai_edge_hitter(struct paddle *computer, struct ball *ball)
 {
     const int random_movement = rand() % 5;
     int loc = ball->y + 4 + random_movement - 4;
@@ -556,13 +557,21 @@ void move_ai_top_hitter(struct paddle *computer, struct ball *ball)
     }
     if (is_ball_coming)
     {
-        if (loc < 0)
+        loc = ball->y + 4 + random_movement - 4;
+        if (ball->y + 2 < 30)
         {
-            loc = 0 + random_movement;
+            if (loc < 0)
+            {
+                loc = 0 + random_movement;
+            }
         }
-        else if (loc > 47)
+        else
         {
-            loc = 47 - random_movement;
+            loc = ball->y + random_movement + 4 - computer->height;
+            if (loc > 47)
+            {
+                loc = 47 - random_movement;
+            }
         }
         if ((computer->y - loc) > computer->height / 2)
         {
@@ -1052,7 +1061,7 @@ void main(void)
     void (*ai_functions[4])(struct paddle *, struct ball *) = {
         move_ai_predictive,
         move_ai_raveel,
-        move_ai_top_hitter,
+        move_ai_edge_hitter,
         move_ai_middle_hitter,
     };
 
@@ -1070,7 +1079,9 @@ void main(void)
         if (player_select == -1)
         {
             move_player(&player, adc_position);
-        } else{
+        }
+        else
+        {
             ai_functions[player_select](&player, &ball);
         }
         ai_functions[ai_select](&computer, &ball);
