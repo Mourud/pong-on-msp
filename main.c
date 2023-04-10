@@ -913,6 +913,39 @@ void wait_for_player_input()
         new = get_adc_position();
     }
 }
+int get_player()
+{
+    char difficulty[][10] = {"*", "**", "**", "*****"};
+
+    int current_input = get_adc_position() >> 4;
+    int old_input = get_adc_position() >> 4;
+    draw_rectangle(0, (current_input * 16) + 8, 4, 8);
+    int i = 0;
+    int j;
+    char desc[] = "#Sel PlayerAI";
+    draw_string(0, 0, font_8x8, desc);
+    for (j = 0; j < 4; j++)
+    {
+        draw_string(5, j * 2 + 1, font_8x8, ai_names[j]);
+        draw_string(61, j * 2 + 1, font_8x8, difficulty[j]);
+    }
+    while (i < 10)
+    {
+        i++;
+        current_input = get_adc_position() >> 4;
+        if (old_input != current_input)
+        {
+            play_music(1);
+            clear_rectangle(0, (old_input * 16) + 8, 4, 8);
+            draw_rectangle(0, (current_input * 16) + 8, 4, 8);
+            old_input = current_input;
+            i = 0;
+        }
+        __delay_cycles(350000);
+    }
+
+    return old_input;
+}
 
 int get_ai()
 {
@@ -950,6 +983,7 @@ int get_ai()
 
 void main(void)
 {
+
     // Stop the watchdog timer so it doesn't reset our chip
     WDTCTL = WDTPW + WDTHOLD;
     P1DIR |= (BIT2 + BIT3 + BIT4);
@@ -977,6 +1011,18 @@ void main(void)
 
     wait_for_player_input();
     start_animation();
+    int player_select = -1;
+    P2DIR &= ~BIT1; // Set P2.1 as input
+    P2REN |= BIT1;  // Enable pull-up/down resistor for P2.1
+    P2OUT |= BIT1;  // Configure pull-up resistor for P2.1
+
+    if (!(P2IN & BIT1))
+    {
+        player_select = get_player();
+        start_animation();
+    }else{
+        player_select = -1;
+    }
 
     void (*ai_functions[4])(struct paddle *, struct ball *) = {
         move_ai_predictive,
@@ -996,8 +1042,11 @@ void main(void)
         clear_rectangle(player.x, player.y, player.width, player.height);
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
         clear_ball(ball.x, ball.y);
-        // move_player(&player, adc_position);
-        ai_functions[2](&player, &ball);
+        if (player_select != -1)
+        {
+            ai_functions[player_select](&player, &ball);   
+        }
+        move_player(&player, adc_position);
         ai_functions[ai_select](&computer, &ball);
         move_ball(&ball);
         check_collision(&ball, &player, &computer);
