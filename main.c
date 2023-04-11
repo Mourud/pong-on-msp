@@ -40,6 +40,8 @@ int ai_select = 0;
 int count = 0;
 int speed_flag = 0;
 int game_point_flag = 0;
+int x_left = 0;
+int x_right = 0;
 
 /* Write data to slave device.  Since the LCD panel is
  * write-only, we don't worry about reading any bits.
@@ -448,6 +450,27 @@ void start_animation()
     write_zeros();
 }
 
+void pause_animation()
+{
+    play_music(1);
+    while (x_left < 42)
+    {
+        clear_rectangle(x_left, 18, 7, 16);
+        clear_rectangle(x_right, 18, 7, 16);
+        x_left++;
+        x_right--;
+        draw_rectangle(x_left, 18, 7, 16);
+        draw_rectangle(x_right, 18, 7, 16);
+    }
+}
+
+void clear_animation()
+{
+
+    clear_rectangle(x_left, 18, 7, 16);
+    clear_rectangle(x_right, 18, 7, 16);
+}
+
 /* Moves player to the y coordinate
  * If y is out of bounds, it will be set to the closest
  * possible value
@@ -799,20 +822,21 @@ void check_game_over(struct paddle *player, struct paddle *computer, struct ball
 
     if (player->score == 4 || computer->score == 4)
     {
-        if (game_point_flag == 0)
+        if (game_point_flag < 2)
         {
-            play_music(2);
-            game_point_flag = 1;
+            play_music(1);
+            game_point_flag++;
         }
 
         if (player->score == 4)
         {
             draw_string(18, 0, font_8x8, "G");
         }
-        else
+        if (computer->score == 4)
         {
             draw_string(77, 0, font_8x8, "G");
         }
+        play_music(1);
     }
 
     if (player->score == 5 || computer->score == 5)
@@ -1067,28 +1091,55 @@ void main(void)
 
     ai_select = get_ai();
     start_animation();
+    int isPaused = 0;
 
     while (1)
     {
+
         count++;
         set_ball_speed(&ball);
         char adc_position = get_adc_position();
         clear_rectangle(player.x, player.y, player.width, player.height);
         clear_rectangle(computer.x, computer.y, computer.width, computer.height);
         clear_ball(ball.x, ball.y);
-        if (player_select == -1)
+        if (isPaused == 0)
         {
-            move_player(&player, adc_position);
+            if (!(P2IN & BIT1))
+            {
+                isPaused = 1;
+                x_left = 10;
+                x_right = 85;
+                pause_animation();
+
+                while (isPaused)
+                {
+                    draw_string(20, 5, font_8x8, "Press to");
+                    draw_string(32, 6, font_8x8, "RESUME");
+                    __delay_cycles(100000);
+                    if (!(P2IN & BIT1))
+                    {
+                        clear_animation();
+                        draw_string(20, 5, font_8x8, "        ");
+                        draw_string(32, 6, font_8x8, "      ");
+                        isPaused = 0;
+                        break;
+                    }
+                }
+            }
+            if (player_select == -1)
+            {
+                move_player(&player, adc_position);
+            }
+            else
+            {
+                ai_functions[player_select](&player, &ball);
+            }
+            ai_functions[ai_select](&computer, &ball);
+            move_ball(&ball);
+            check_collision(&ball, &player, &computer);
+            update_score(&player, &computer, &ball);
+            check_game_over(&player, &computer, &ball);
         }
-        else
-        {
-            ai_functions[player_select](&player, &ball);
-        }
-        ai_functions[ai_select](&computer, &ball);
-        move_ball(&ball);
-        check_collision(&ball, &player, &computer);
-        update_score(&player, &computer, &ball);
-        check_game_over(&player, &computer, &ball);
         draw_rectangle(player.x, player.y, player.width, player.height);
         draw_rectangle(computer.x, computer.y, computer.width, computer.height);
         draw_ball(ball.x, ball.y);
