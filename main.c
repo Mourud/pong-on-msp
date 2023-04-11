@@ -30,8 +30,8 @@ struct paddle
 
 const char ai_names[][8] = {
     {'M', 'r', '.', 'F', 'r', 'o', 'g', '\0'}, // Mr. Frog // Predictive
-    "Raveel",                                  // Raveel // Raveel's AI Half
     "Dubnel",                                  // Dubnel // Top hitter
+    "Raveel",                                  // Raveel // Raveel's AI Half
     "Andrzej",                                 // Andrzej // Middle hitter
 
 };
@@ -824,10 +824,8 @@ void check_game_over(struct paddle *player, struct paddle *computer, struct ball
     {
         if (game_point_flag < 2)
         {
-            play_music(1);
             game_point_flag++;
         }
-
         if (player->score == 4)
         {
             draw_string(18, 0, font_8x8, "G");
@@ -836,7 +834,6 @@ void check_game_over(struct paddle *player, struct paddle *computer, struct ball
         {
             draw_string(77, 0, font_8x8, "G");
         }
-        play_music(1);
     }
 
     if (player->score == 5 || computer->score == 5)
@@ -1005,7 +1002,7 @@ int get_player()
 
 int get_ai()
 {
-    char difficulty[][10] = {"*", "**", "**", "*****"};
+    char difficulty[][10] = {"*", "***", "****", "*****"};
 
     int current_input = get_adc_position() >> 4;
     int old_input = get_adc_position() >> 4;
@@ -1084,8 +1081,8 @@ void main(void)
 
     void (*ai_functions[4])(struct paddle *, struct ball *) = {
         move_ai_predictive,
-        move_ai_raveel,
         move_ai_edge_hitter,
+        move_ai_raveel,
         move_ai_middle_hitter,
     };
 
