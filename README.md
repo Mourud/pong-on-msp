@@ -158,10 +158,10 @@ diagram
     eventually incorporated pause animations, transforming the pause
     functionality into a deliberate feature of the game.
 
+
+# Code:
+
  ![Diagram Description automatically generated](images/fig4.png)
-
-#Code:
-
 All the code for this game was developed by me, except for the text
 display functions and SPI communication function.
 
