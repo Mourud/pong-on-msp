@@ -158,7 +158,9 @@ diagram
     eventually incorporated pause animations, transforming the pause
     functionality into a deliberate feature of the game.
 
-# ![Diagram Description automatically generated](images/fig4.png)Code:
+ ![Diagram Description automatically generated](images/fig4.png)
+
+#Code:
 
 All the code for this game was developed by me, except for the text
 display functions and SPI communication function.
@@ -371,11 +373,3 @@ the project:
 2.  <https://www.mouser.ca/datasheet/2/127/dogs102_6e-2942018.pdf>
 
 3.  <http://dbindner.freeshell.org/msp430/lcd_spi.html>
-
-# Appendix:
-
-Code for Audio Playback MSP:
-<https://github.com/Mourud/electronics-lab/tree/revert-commit/music>
-
-Code for Primary MSP:
-<https://github.com/Mourud/electronics-lab/tree/revert-commit/project>
