@@ -234,10 +234,12 @@ The game features four different AIs:
 ### Game screens:
 
 ![A close up of a sign Description automatically generated with low
-confidence](images/fig5.jpg)![A close-up of a label Description
+confidence](images/fig5.jpg)!
+Figure 5 Title Screen
+[A close-up of a label Description
 automatically generated with low
 confidence](images/fig6.jpg)
-Figure 5 Title Screen Figure 6 Difficulty Select Screen
+Figure 6 Difficulty Select Screen
 
 ![A picture containing text, electronics, oven, display Description
 automatically generated](images/fig7.1.jpg)![A picture containing text, electronics,
