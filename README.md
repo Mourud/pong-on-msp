@@ -87,15 +87,15 @@ immersive and enjoyable experience for the player.
 
 # Apparatus:
 
-![](media/image1.jpeg){width="5.113043525809274in"
+![](images/fig1.jpeg){width="5.113043525809274in"
 height="3.8347845581802273in"}
 
 Figure 1 Assembled Game Console (missing potentiometer)
 
 ![Diagram Description automatically
-generated](media/image2.png){width="2.5658770778652666in"
+generated](images/fig2.png){width="2.5658770778652666in"
 height="1.8701290463692037in"}![Diagram, schematic Description
-automatically generated](media/image3.png){width="3.870130139982502in"
+automatically generated](images/fig3.png){width="3.870130139982502in"
 height="3.9139588801399827in"}
 
 Figure 2 High level diagram of the game console. Figure 3 Circuit
@@ -162,7 +162,7 @@ diagram
     eventually incorporated pause animations, transforming the pause
     functionality into a deliberate feature of the game.
 
-# ![Diagram Description automatically generated](media/image4.png){width="3.234722222222222in" height="4.889583333333333in"}Code:
+# ![Diagram Description automatically generated](images/fig4.png){width="3.234722222222222in" height="4.889583333333333in"}Code:
 
 All the code for this game was developed by me, except for the text
 display functions and SPI communication function.
@@ -236,41 +236,41 @@ The game features four different AIs:
 ### Game screens:
 
 ![A close up of a sign Description automatically generated with low
-confidence](media/image5.jpeg){width="3.031496062992126in"
+confidence](images/fig5.jpeg){width="3.031496062992126in"
 height="2.197834645669291in"}![A close-up of a label Description
 automatically generated with low
-confidence](media/image6.jpeg){width="3.031496062992126in"
+confidence](images/fig6.jpeg){width="3.031496062992126in"
 height="2.16836176727909in"}
 
-Figure 1 Title Screen Figure 2 Difficulty Select Screen
+Figure 5 Title Screen Figure 6 Difficulty Select Screen
 
 ![A picture containing text, electronics, oven, display Description
-automatically generated](media/image7.jpeg){width="3.031496062992126in"
+automatically generated](images/fig7.1.jpeg){width="3.031496062992126in"
 height="2.143099300087489in"}![A picture containing text, electronics,
 old Description automatically
-generated](media/image8.jpeg){width="3.0in"
+generated](images/fig7.2.jpeg){width="3.0in"
 height="2.145832239720035in"}
 
-Figure 3 Gameplay screens. On the left screen you can see the trailing
+Figure 7 Gameplay screens. On the left screen you can see the trailing
 effect
 
 ![A picture containing text, electronics, white Description
-automatically generated](media/image9.jpeg){width="3.031496062992126in"
+automatically generated](images/fig8.1.jpeg){width="3.031496062992126in"
 height="2.1848786089238845in"}![A picture containing text, electronics,
 old Description automatically
-generated](media/image10.jpeg){width="3.031496062992126in"
+generated](images/fig8.2.jpeg){width="3.031496062992126in"
 height="2.1602209098862644in"}![A picture containing text, electronics,
 sign Description automatically
-generated](media/image11.jpeg){width="3.031496062992126in"
+generated](images/fig8.3.jpeg){width="3.031496062992126in"
 height="2.15994094488189in"}
 
-Figure 4 Pause screen animations.
+Figure 8 Pause screen animations.
 
 ![A picture containing text Description automatically
-generated](media/image12.jpeg){width="3.031496062992126in"
+generated](images/fig9.jpeg){width="3.031496062992126in"
 height="2.1272287839020123in"}
 
-Figure 5 Game over screen when AI (Raveel) wins
+Figure 9 Game over screen when AI (Raveel) wins
 
 # Results:
 
