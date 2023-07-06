@@ -88,11 +88,15 @@ immersive and enjoyable experience for the player.
 # Apparatus:
 
 ![Assembled Game Console (missing potentiometer)](images/fig1.jpg)
+
 Figure 1 Assembled Game Console (missing potentiometer)
 
 ![High level diagram of the game console](images/fig2.png)
+
 Figure 2 High level diagram of the game console
+
 ![Circuit diagram](images/fig3.png)
+
 Figure 3 Circuit diagram
 
 
@@ -161,6 +165,7 @@ Figure 3 Circuit diagram
 # Code:
 
 ![Control flow of entire program](images/fig4.png)
+
 Figure 4 Control flow of entire program
 
 All the code for this game was developed by me, except for the text
@@ -234,11 +239,14 @@ The game features four different AIs:
 ### Game screens:
 
 ![Title Screen](images/fig5.jpg)
+
 Figure 5 Title Screen
+
 ![Difficulty Select Screen](images/fig6.jpg)
+
 Figure 6 Difficulty Select Screen
 
-![Gameplay screenstrailing
+![Gameplay screens: trailing
 effect](images/fig7.1.jpg)
 ![Gameplay screens](images/fig7.2.jpg)
 
