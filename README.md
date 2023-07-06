@@ -161,7 +161,9 @@ diagram
 
 # Code:
 
- ![Diagram Description automatically generated](images/fig4.png)
+![Diagram Description automatically generated](images/fig4.png)
+Figure 4 Control flow of entire program
+
 All the code for this game was developed by me, except for the text
 display functions and SPI communication function.
 
@@ -172,7 +174,6 @@ than it appears because the potentiometer signal contains noise even
 after being bit-shifted by 6. A dead zone variable is introduced to
 differentiate between actual player input and random noise.
 
-Figure 4 Control flow of entire program
 
 ### Game Logic
 
