@@ -87,15 +87,14 @@ immersive and enjoyable experience for the player.
 
 # Apparatus:
 
-![](images/fig1.jpg)
+![Assembled Game Console (missing potentiometer)](images/fig1.jpg)
 Figure 1 Assembled Game Console (missing potentiometer)
 
-![Diagram Description automatically
-generated](images/fig2.png)![Diagram, schematic Description
-automatically generated](images/fig3.png)
+![High level diagram of the game console](images/fig2.png)
+Figure 2 High level diagram of the game console
+![Circuit diagram](images/fig3.png)
+Figure 3 Circuit diagram
 
-Figure 2 High level diagram of the game console. Figure 3 Circuit
-diagram
 
 1.  Primary MSP: The Primary MSP managed all game logic, excluding
     audio. It converted the potentiometer value using ADC on pin 6.0 and
@@ -161,7 +160,7 @@ diagram
 
 # Code:
 
-![Diagram Description automatically generated](images/fig4.png)
+![Control flow of entire program](images/fig4.png)
 Figure 4 Control flow of entire program
 
 All the code for this game was developed by me, except for the text
@@ -234,33 +233,25 @@ The game features four different AIs:
 
 ### Game screens:
 
-![A close up of a sign Description automatically generated with low
-confidence](images/fig5.jpg)!
+![Title Screen](images/fig5.jpg)
 Figure 5 Title Screen
-[A close-up of a label Description
-automatically generated with low
-confidence](images/fig6.jpg)
+![Difficulty Select Screen](images/fig6.jpg)
 Figure 6 Difficulty Select Screen
 
-![A picture containing text, electronics, oven, display Description
-automatically generated](images/fig7.1.jpg)![A picture containing text, electronics,
-old Description automatically
-generated](images/fig7.2.jpg)
+![Gameplay screenstrailing
+effect](images/fig7.1.jpg)
+![Gameplay screens](images/fig7.2.jpg)
 
-Figure 7 Gameplay screens. On the left screen you can see the trailing
+Figure 7 Gameplay screens. On the top screen you can see the trailing
 effect
 
-![A picture containing text, electronics, white Description
-automatically generated](images/fig8.1.jpg)![A picture containing text, electronics,
-old Description automatically
-generated](images/fig8.2.jpg![A picture containing text, electronics,
-sign Description automatically
-generated](images/fig8.3.jpg)
+![Pause screen animations. 1](images/fig8.1.jpg)
+![Pause screen animations. 2](images/fig8.2.jpg)
+![Pause screen animations. 3](images/fig8.3.jpg)
 
 Figure 8 Pause screen animations.
 
-![A picture containing text Description automatically
-generated](images/fig9.jpg)
+![Game over screen when AI (Raveel) wins](images/fig9.jpg)
 
 Figure 9 Game over screen when AI (Raveel) wins
 
