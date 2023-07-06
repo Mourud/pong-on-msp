@@ -87,7 +87,7 @@ immersive and enjoyable experience for the player.
 
 # Apparatus:
 
-![](images/fig1.jpeg)
+![](images/fig1.jpg)
 Figure 1 Assembled Game Console (missing potentiometer)
 
 ![Diagram Description automatically
@@ -232,30 +232,30 @@ The game features four different AIs:
 ### Game screens:
 
 ![A close up of a sign Description automatically generated with low
-confidence](images/fig5.jpeg)![A close-up of a label Description
+confidence](images/fig5.jpg)![A close-up of a label Description
 automatically generated with low
-confidence](images/fig6.jpeg)
+confidence](images/fig6.jpg)
 Figure 5 Title Screen Figure 6 Difficulty Select Screen
 
 ![A picture containing text, electronics, oven, display Description
-automatically generated](images/fig7.1.jpeg)![A picture containing text, electronics,
+automatically generated](images/fig7.1.jpg)![A picture containing text, electronics,
 old Description automatically
-generated](images/fig7.2.jpeg)
+generated](images/fig7.2.jpg)
 
 Figure 7 Gameplay screens. On the left screen you can see the trailing
 effect
 
 ![A picture containing text, electronics, white Description
-automatically generated](images/fig8.1.jpeg)![A picture containing text, electronics,
+automatically generated](images/fig8.1.jpg)![A picture containing text, electronics,
 old Description automatically
-generated](images/fig8.2.jpeg![A picture containing text, electronics,
+generated](images/fig8.2.jpg![A picture containing text, electronics,
 sign Description automatically
-generated](images/fig8.3.jpeg)
+generated](images/fig8.3.jpg)
 
 Figure 8 Pause screen animations.
 
 ![A picture containing text Description automatically
-generated](images/fig9.jpeg)
+generated](images/fig9.jpg)
 
 Figure 9 Game over screen when AI (Raveel) wins
 
